@@ -95,4 +95,67 @@ int main() {
         std::cout << "The addition of the two matrices is incorrect." << std::endl;
     }
 
+    // Test Matrix Scaling
+    std::cout << "------MATRIX Scaling TEST------" << std::endl;
+    std::cout << "Multiplied a 256*256 matrix by 2.5" << std::endl;
+    N = 256;
+    M = 256;
+    float* matrix_a3, *matrix_b3;
+    matrix_a3 = (float *)malloc(N*M*sizeof(float));
+    matrix_b3 = (float *)malloc(N*M*sizeof(float));
+    for (int i = 0; i < N*M; i++){
+        matrix_a3[i] = i;
+        matrix_b3[i] = i;
+    }
+    matrix_scaling(matrix_a3, matrix_b3, 2.5, N, M); 
+    isAdditionCorrect = true;
+
+    for(int i = 0; i < N; i++) {
+        for(int j = 0; j < M; j++) {
+            float a = matrix_a3[i * N + j]; 
+            float b = matrix_b3[i * N + j];            
+            if (abs((a * 2.5) - b) > 1e-5) { 
+                std::cout << "Mismatch at [" << i << "][" << j << "]: " 
+                        << a << " * " << 2.5 << " != " << b << std::endl;
+                isAdditionCorrect = false;
+            }
+        }
+    }
+
+    if (isAdditionCorrect) {
+        std::cout << "The addition of the two matrices is correct." << std::endl;
+    } else {
+        std::cout << "The addition of the two matrices is incorrect." << std::endl;
+    }
+
+    std::cout << "Multiplied a 256*512 matrix by 3" << std::endl;
+    N = 256;
+    M = 512;
+    float* matrix_a4, *matrix_b4;
+    matrix_a4 = (float *)malloc(N*M*sizeof(float));
+    matrix_b4 = (float *)malloc(N*M*sizeof(float));
+    for (int i = 0; i < N*M; i++){
+        matrix_a4[i] = i;
+        matrix_b4[i] = i;
+    }
+    matrix_scaling(matrix_a4, matrix_b4, 4, N, M); 
+    isAdditionCorrect = true;
+
+    for(int i = 0; i < N; i++) {
+        for(int j = 0; j < M; j++) {
+            float a = matrix_a4[i * N + j]; 
+            float b = matrix_b4[i * N + j];            
+            if (abs((a * 4) - b) > 1e-5) { 
+                std::cout << "Mismatch at [" << i << "][" << j << "]: " 
+                        << a << " * " << 4 << " != " << b << std::endl;
+                isAdditionCorrect = false;
+            }
+        }
+    }
+
+    if (isAdditionCorrect) {
+        std::cout << "The addition of the two matrices is correct." << std::endl;
+    } else {
+        std::cout << "The addition of the two matrices is incorrect." << std::endl;
+    }
 }

@@ -21,6 +21,15 @@ __global__ void addMatrices(float* a, float *b, float *c, int n, int m){
     }
 }
 
+// Matrix Scaling
+__global__ void scaleMatrix(float* a, float* b, float scalar, int n, int m){
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	int j = blockIdx.y * blockDim.y + threadIdx.y;
+	if (j < m && i < n) {
+        b[i * n + j]= a[i * n + j] * scalar;
+    }
+}
+
 namespace MatrixOperations {
 	void vector_addition(float* a, float* b, float* c, int n){		
 		float *d_a, *d_b, *d_c;
@@ -44,6 +53,17 @@ namespace MatrixOperations {
 		dim3 gridSize((n + blockSize.x - 1) / blockSize.x, (m + blockSize.y - 1) / blockSize.y);
 		addMatrices<<<gridSize, blockSize>>>(d_a, d_b, d_c, n, m);
 		cudaMemcpy(c, d_c, n*m*sizeof(float), cudaMemcpyDeviceToHost);
+	}
+
+	void matrix_scaling(float* a, float* b, float scalar, int n, int m) {
+		float *d_a, *d_b;
+		cudaMalloc(&d_a, n*m*sizeof(float));
+		cudaMalloc(&d_b, n*m*sizeof(float));
+		cudaMemcpy(d_a, a, n*m*sizeof(float), cudaMemcpyHostToDevice);
+		dim3 blockSize(16, 16);
+		dim3 gridSize((n + blockSize.x - 1) / blockSize.x, (m + blockSize.y - 1) / blockSize.y);
+		scaleMatrix<<<gridSize, blockSize>>>(d_a, d_b, scalar, n, m);
+		cudaMemcpy(b, d_b, n*m*sizeof(float), cudaMemcpyDeviceToHost);
 	}
 
 }

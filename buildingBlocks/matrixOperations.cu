@@ -30,17 +30,28 @@ __global__ void scaleMatrix(float* a, float* b, float scalar, int n, int m){
     }
 }
 
-// Matrix Multiplication
-__global__ void multiplyMatrices(float* a, float* b, int n, int m, int p){
+// Matrix Multiplication (CHECK RIGHT INDICES)
+__global__ void multiplyMatrices(float* a, float* b, float* c, int n, int m, int p){
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
 	float temp = 0.0f;
-	if (i < m && i < n) {
+	if (j < m && i < n) {
         for(int k = 0; k < n; k++) {
 			temp += a[j * n + k] * b[k * p + i]
 		}
 		c[j * p + i] = temp;
     }
+}
+
+
+// Matrix Dot Product (CHECK RIGHT INDICES)
+__global__ void matrixDotProduct(float* a, float* b, float* c, int n, int m, int p) {
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	int j = blockIdx.y * blockDim.y + threadIdx.y;
+	float temp = 0.0f;
+	if (j < m && i < n) {
+		c[j * p + i] += a[j * n + i] * b[j * p + i]
+	}
 }
 
 
@@ -94,7 +105,16 @@ namespace MatrixOperations {
 	}
 
 	
-
+	void matrix_dot_product(float* a, float* b, float*c, int n, int m, int p){
+		float *d_a, *d_b, *d_c;
+		cudaMalloc(&d_a, n*m*sizeof(float));
+		cudaMalloc(&d_b, n*p * sizeof(float));
+		cudaMalloc(&d_c, m*p*sizeof(float));
+		dim3 blockSize(16, 16);
+		dim3 gridDim((p+blockSize.x - 1)/blockSize.x, (M + blockDim.y-1)/blockDim.y);
+		matrixDotProduct<<<gridDim, blockSize>>>(d_a, d_b, d_c, n, m, p);
+		cudaMemcpy(c, d_c, m*p*sizeof(float), cudaMemcpyDeviceToHost);
+	}
 
 
 }

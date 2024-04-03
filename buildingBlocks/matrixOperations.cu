@@ -30,6 +30,21 @@ __global__ void scaleMatrix(float* a, float* b, float scalar, int n, int m){
     }
 }
 
+// Matrix Multiplication
+__global__ void multiplyMatrices(float* a, float* b, int n, int m, int p){
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	int j = blockIdx.y * blockDim.y + threadIdx.y;
+	float temp = 0.0f;
+	if (i < m && i < n) {
+        for(int k = 0; k < n; k++) {
+			temp += a[j * n + k] * b[k * p + i]
+		}
+		c[j * p + i] = temp;
+    }
+}
+
+
+
 namespace MatrixOperations {
 	void vector_addition(float* a, float* b, float* c, int n){		
 		float *d_a, *d_b, *d_c;
@@ -65,5 +80,21 @@ namespace MatrixOperations {
 		scaleMatrix<<<gridSize, blockSize>>>(d_a, d_b, scalar, n, m);
 		cudaMemcpy(b, d_b, n*m*sizeof(float), cudaMemcpyDeviceToHost);
 	}
+
+
+	void matrix_multiplication(float* a, float* b, float* c, int n, int m, int p) {
+		float *d_a, *d_b, *d_c;
+		cudaMalloc(&d_a, n*m*sizeof(float));
+		cudaMalloc(&d_b, n*p * sizeof(float));
+		cudaMalloc(&d_c, m*p*sizeof(float));
+		dim3 blockSize(16, 16);
+		dim3 gridDim((p+blockSize.x - 1)/blockSize.x, (M + blockDim.y-1)/blockDim.y);
+		multiplyMatrices<<<gridDim, blockSize>>>(d_a, d_b, d_c, n, m, p);
+		cudaMemcpy(c, d_c, m*p*sizeof(float), cudaMemcpyDeviceToHost);
+	}
+
+	
+
+
 
 }

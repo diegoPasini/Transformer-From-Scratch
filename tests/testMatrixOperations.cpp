@@ -1,4 +1,4 @@
-#include "../operations/matrixOperations.cuh"
+#include "../buildingBlocks/matrixOperations.cuh"
 #include <iostream>
 
 using namespace MatrixOperations;
@@ -108,7 +108,7 @@ int main() {
         matrix_b3[i] = i;
     }
     matrix_scaling(matrix_a3, matrix_b3, 2.5, N, M); 
-    isAdditionCorrect = true;
+    bool isScalingCorrect = true;
 
     for(int i = 0; i < N; i++) {
         for(int j = 0; j < M; j++) {
@@ -117,12 +117,12 @@ int main() {
             if (abs((a * 2.5) - b) > 1e-5) { 
                 std::cout << "Mismatch at [" << i << "][" << j << "]: " 
                         << a << " * " << 2.5 << " != " << b << std::endl;
-                isAdditionCorrect = false;
+                isScalingCorrect = false;
             }
         }
     }
 
-    if (isAdditionCorrect) {
+    if (isScalingCorrect) {
         std::cout << "The addition of the two matrices is correct." << std::endl;
     } else {
         std::cout << "The addition of the two matrices is incorrect." << std::endl;
@@ -139,7 +139,7 @@ int main() {
         matrix_b4[i] = i;
     }
     matrix_scaling(matrix_a4, matrix_b4, 4, N, M); 
-    isAdditionCorrect = true;
+    isScalingCorrect = true;
 
     for(int i = 0; i < N; i++) {
         for(int j = 0; j < M; j++) {
@@ -148,14 +148,74 @@ int main() {
             if (abs((a * 4) - b) > 1e-5) { 
                 std::cout << "Mismatch at [" << i << "][" << j << "]: " 
                         << a << " * " << 4 << " != " << b << std::endl;
-                isAdditionCorrect = false;
+                isScalingCorrect = false;
             }
         }
     }
 
-    if (isAdditionCorrect) {
+    if (isScalingCorrect) {
         std::cout << "The addition of the two matrices is correct." << std::endl;
     } else {
         std::cout << "The addition of the two matrices is incorrect." << std::endl;
     }
+
+    //Test Matrix Multiplication
+    std::cout << "------MATRIX MULTIPLICATION TEST------" << std::endl;
+    std::cout << "Multiplied Matrix [[1, 2], [3, 4]] and [[5, 6], [7, 8]]" << std::endl;
+    N = 2
+    M = 2
+    int P = 2;
+    float *mul_matrixA, *mul_matrixB, *mul_matrixC;
+    mul_matrixA = (float *)malloc(N*M*sizeof(float));
+    mul_matrixB = (float *)malloc(N*P*sizeof(float));
+    mul_matrixC = (float *)malloc(P*M*sizeof(float));
+    mul_matrixA[0] = 1; mul_matrixA[1] = 2;
+    mul_matrixA[2] = 3; mul_matrixA[3] = 4;
+
+    mul_matrixB[0] = 5; mul_matrixB[1] = 6;
+    mul_matrixB[2] = 7; mul_matrixB[3] = 8;
+
+    matrix_multiplication(mul_matrixA, mul_matrixB, mul_matrixC, N, M, P);
+
+    std::cout << "Result Matrix: " << std::endl;
+    std::cout << "[" << mul_matrixC[0] << ", " << mul_matrixC[1] << "], [" 
+              << mul_matrixC[2] << ", " << mul_matrixC[3] << "]" << std::endl;
+
+    bool isMultiplicationCorrect = true;
+    if (std::abs(mul_matrixC[0] - 19) > 1e-5 || std::abs(mul_matrixC[1] - 22) > 1e-5 ||
+        std::abs(mul_matrixC[2] - 43) > 1e-5 || std::abs(mul_matrixC[3] - 50) > 1e-5) {
+        isMultiplicationCorrect = false;
+    }
+
+    if (isMultiplicationCorrect) {
+        std::cout << "Matrix multiplication is correct." << std::endl;
+    } else {
+        std::cout << "Matrix multiplication is incorrect." << std::endl;
+    }
+
+     N = 2, M = 3, P = 4;
+
+    float *A = (float *)malloc(M*N*sizeof(float)); 
+    float *B = (float *)malloc(N*P*sizeof(float));
+    float *C = (float *)malloc(M*P*sizeof(float));
+
+    A[0] = 1; A[1] = 2; A[2] = 3;
+    A[3] = 4; A[4] = 5; A[5] = 6;
+
+    B[0] = 7; B[1] = 8; B[2] = 9; B[3] = 10;
+    B[4] = 11; B[5] = 12; B[6] = 13; B[7] = 14;
+    B[8] = 15; B[9] = 16; B[10] = 17; B[11] = 18;
+
+    matrix_multiplication(A, B, C, M, N, P);
+
+    std::cout << "Result Matrix C (2x4):" << std::endl;
+    for (int i = 0; i < M; ++i) {
+        for (int j = 0; j < P; ++j) {
+            std::cout << C[i * P + j] << " ";
+        }
+        std::cout << std::endl;
+    }
+    
+
+
 }

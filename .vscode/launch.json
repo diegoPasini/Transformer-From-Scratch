@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "c:/Users/diego/Documents/Misceallenous/Transformer-From-Scratch",
-      "program": "c:/Users/diego/Documents/Misceallenous/Transformer-From-Scratch/build/Debug/outDebug",
+      "cwd": "c:/Users/diego/Documents/Misceallenous/Transformer-From-Scratch/tests",
+      "program": "c:/Users/diego/Documents/Misceallenous/Transformer-From-Scratch/tests/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [

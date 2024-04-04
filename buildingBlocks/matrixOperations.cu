@@ -32,7 +32,8 @@ __global__ void scaleMatrix(float* a, float* b, float scalar, int n, int m){
     }
 }
 
-// Matrix Multiplication (CHECK RIGHT INDICES)
+// Matrix Multiplication
+// Try Strassen Algorithm????
 __global__ void multiplyMatrices(float* a, float* b, float* c, int n, int m, int p){
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -46,22 +47,15 @@ __global__ void multiplyMatrices(float* a, float* b, float* c, int n, int m, int
 }
 
 
-// Matrix Dot Product (CHECK RIGHT INDICES)
-__global__ void matrixDotProduct(float* a, float* b, float* c, int n, int m, int p) {
-	int i = blockIdx.x * blockDim.x + threadIdx.x;
-	int j = blockIdx.y * blockDim.y + threadIdx.y;
-	if (j < m && i < n) {
-		c[j * p + i] += a[j * n + i] * b[j * p + i];
-	}
-}
 
-__global__ void matrixTranspose(float *a, float *b, int n, int m) {
-	int i = blockIdx.x * blockDim.x + threadIdx.x;
-	int j = blockIdx.y * blockDim.y + threadIdx.y;
-	if (j < m && i < n) {
-		b[i * m + j] = a[i * n + j];
-	}
-}
+// Matrix Transpose
+// __global__ void matrixTranspose(float *a, float *b, int n, int m) {
+// 	int i = blockIdx.x * blockDim.x + threadIdx.x;
+// 	int j = blockIdx.y * blockDim.y + threadIdx.y;
+// 	if (j < m && i < n) {
+// 		b[i * m + j] = a[i * n + j];
+// 	}
+// }
 
 
 
@@ -115,28 +109,16 @@ namespace MatrixOperations {
 		cudaMemcpy(c, d_c, m*p*sizeof(float), cudaMemcpyDeviceToHost);
 	}
 
-	
-	void matrix_dot_product(float* a, float* b, float*c, int n, int m, int p){
-		float *d_a, *d_b, *d_c;
-		cudaMalloc(&d_a, n*m*sizeof(float));
-		cudaMalloc(&d_b, n*p * sizeof(float));
-		cudaMalloc(&d_c, m*p*sizeof(float));
-		// Check correct dimensions
-		dim3 blockSize(16, 16);
-		dim3 gridDim((p+blockSize.x - 1)/blockSize.x, (m + blockSize.y-1)/blockSize.y);
-		matrixDotProduct<<<gridDim, blockSize>>>(d_a, d_b, d_c, n, m, p);
-		cudaMemcpy(c, d_c, m*p*sizeof(float), cudaMemcpyDeviceToHost);
-	}
+	// void matrix_transpose(float *a, float *b, int n, int m) {
+	// 	float *d_a, *d_b;
+	// 	cudaMalloc(&d_a, n*m*sizeof(float));
+	// 	cudaMalloc(&d_b, n*m*sizeof(float));
+	// 	cudaMemcpy(d_a, a, n*m*sizeof(float), cudaMemcpyHostToDevice);
+	// 	dim3 blockSize(16, 16);
+	// 	dim3 gridSize((n + blockSize.x - 1) / blockSize.x, (m + blockSize.y - 1) / blockSize.y);
+	// 	matrixTranspose<<<gridSize, blockSize>>>(d_a, d_b, n, m);
+	// 	cudaMemcpy(b, d_b, n*m*sizeof(float), cudaMemcpyDeviceToHost);
+	// }
 
 
-	void matrix_transpose(float *a, float *b, int n, int m) {
-		float *d_a, *d_b;
-		cudaMalloc(&d_a, n*m*sizeof(float));
-		cudaMalloc(&d_b, n*m*sizeof(float));
-		cudaMemcpy(d_a, a, n*m*sizeof(float), cudaMemcpyHostToDevice);
-		dim3 blockSize(16, 16);
-		dim3 gridSize((n + blockSize.x - 1) / blockSize.x, (m + blockSize.y - 1) / blockSize.y);
-		matrixTranspose<<<gridSize, blockSize>>>(d_a, d_b, n, m);
-		cudaMemcpy(b, d_b, n*m*sizeof(float), cudaMemcpyDeviceToHost);
-	}
 }

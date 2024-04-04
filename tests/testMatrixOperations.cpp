@@ -193,7 +193,7 @@ int main() {
         std::cout << "Matrix multiplication is incorrect." << std::endl;
     }
 
-     N = 2, M = 3, P = 4;
+    N = 2, M = 3, P = 4;
 
     float *A = (float *)malloc(M*N*sizeof(float)); 
     float *B = (float *)malloc(N*P*sizeof(float));
@@ -216,6 +216,28 @@ int main() {
         std::cout << std::endl;
     }
     
-    
+    std::cout << "------MATRIX TRANSPOSE TESTS------" << std::endl;
+    std::cout << "Multiplied Matrix [[1, 2], [3, 4]] and [[5, 6], [7, 8]]" << std::endl;
+    N = 2, M = 3, P = 4;
 
+    float *A = (float *)malloc(M*N*sizeof(float)); 
+    float *B = (float *)malloc(N*P*sizeof(float));
+    float *C = (float *)malloc(M*P*sizeof(float));
+
+    A[0] = 1; A[1] = 2; A[2] = 3;
+    A[3] = 4; A[4] = 5; A[5] = 6;
+
+    B[0] = 7; B[1] = 8; B[2] = 9; B[3] = 10;
+    B[4] = 11; B[5] = 12; B[6] = 13; B[7] = 14;
+    B[8] = 15; B[9] = 16; B[10] = 17; B[11] = 18;
+
+    matrix_multiplication(A, B, C, M, N, P);
+
+    std::cout << "Result Matrix C (2x4):" << std::endl;
+    for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < P; ++j) {
+            std::cout << C[i * P + j] << " ";
+        }
+        std::cout << std::endl;
+    }
 }

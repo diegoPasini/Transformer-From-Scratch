@@ -162,8 +162,8 @@ int main() {
     //Test Matrix Multiplication
     std::cout << "------MATRIX MULTIPLICATION TEST------" << std::endl;
     std::cout << "Multiplied Matrix [[1, 2], [3, 4]] and [[5, 6], [7, 8]]" << std::endl;
-    N = 2
-    M = 2
+    N = 2;
+    M = 2;
     int P = 2;
     float *mul_matrixA, *mul_matrixB, *mul_matrixC;
     mul_matrixA = (float *)malloc(N*M*sizeof(float));
@@ -209,7 +209,7 @@ int main() {
     matrix_multiplication(A, B, C, M, N, P);
 
     std::cout << "Result Matrix C (2x4):" << std::endl;
-    for (int i = 0; i < M; ++i) {
+    for (int i = 0; i < N; ++i) {
         for (int j = 0; j < P; ++j) {
             std::cout << C[i * P + j] << " ";
         }

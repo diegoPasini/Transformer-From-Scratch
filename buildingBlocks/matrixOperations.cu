@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <iostream>
 #include "matrixOperations.cuh"
+#include <cmath>
+
 
 // Vector Addition
 __global__ void addVectors(float* a, float* b, float *c, int size){
@@ -35,9 +37,9 @@ __global__ void multiplyMatrices(float* a, float* b, float* c, int n, int m, int
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
 	float temp = 0.0f;
-	if (j < m && i < n) {
+	if (j < m && i < p) {
         for(int k = 0; k < n; k++) {
-			temp += a[j * n + k] * b[k * p + i]
+			temp += a[j * n + k] * b[k * p + i];
 		}
 		c[j * p + i] = temp;
     }
@@ -48,9 +50,8 @@ __global__ void multiplyMatrices(float* a, float* b, float* c, int n, int m, int
 __global__ void matrixDotProduct(float* a, float* b, float* c, int n, int m, int p) {
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
-	float temp = 0.0f;
 	if (j < m && i < n) {
-		c[j * p + i] += a[j * n + i] * b[j * p + i]
+		c[j * p + i] += a[j * n + i] * b[j * p + i];
 	}
 }
 
@@ -106,8 +107,10 @@ namespace MatrixOperations {
 		cudaMalloc(&d_a, n*m*sizeof(float));
 		cudaMalloc(&d_b, n*p * sizeof(float));
 		cudaMalloc(&d_c, m*p*sizeof(float));
+        cudaMemcpy(d_a, a, n*m*sizeof(float), cudaMemcpyHostToDevice);
+        cudaMemcpy(d_b, b, n*p*sizeof(float), cudaMemcpyHostToDevice);
 		dim3 blockSize(16, 16);
-		dim3 gridDim((p+blockSize.x - 1)/blockSize.x, (M + blockDim.y-1)/blockDim.y);
+		dim3 gridDim((p+blockSize.x - 1)/blockSize.x, (m + blockSize.y-1)/blockSize.y);
 		multiplyMatrices<<<gridDim, blockSize>>>(d_a, d_b, d_c, n, m, p);
 		cudaMemcpy(c, d_c, m*p*sizeof(float), cudaMemcpyDeviceToHost);
 	}
@@ -119,8 +122,8 @@ namespace MatrixOperations {
 		cudaMalloc(&d_b, n*p * sizeof(float));
 		cudaMalloc(&d_c, m*p*sizeof(float));
 		// Check correct dimensions
-		// dim3 blockSize(16, 16);
-		// dim3 gridDim((p+blockSize.x - 1)/blockSize.x, (M + blockDim.y-1)/blockDim.y);
+		dim3 blockSize(16, 16);
+		dim3 gridDim((p+blockSize.x - 1)/blockSize.x, (m + blockSize.y-1)/blockSize.y);
 		matrixDotProduct<<<gridDim, blockSize>>>(d_a, d_b, d_c, n, m, p);
 		cudaMemcpy(c, d_c, m*p*sizeof(float), cudaMemcpyDeviceToHost);
 	}
@@ -133,8 +136,7 @@ namespace MatrixOperations {
 		cudaMemcpy(d_a, a, n*m*sizeof(float), cudaMemcpyHostToDevice);
 		dim3 blockSize(16, 16);
 		dim3 gridSize((n + blockSize.x - 1) / blockSize.x, (m + blockSize.y - 1) / blockSize.y);
-		matrix_transpose<<<gridSize, blockSize>>>(d_a, d_b, n, m);
+		matrixTranspose<<<gridSize, blockSize>>>(d_a, d_b, n, m);
 		cudaMemcpy(b, d_b, n*m*sizeof(float), cudaMemcpyDeviceToHost);
 	}
-
 }

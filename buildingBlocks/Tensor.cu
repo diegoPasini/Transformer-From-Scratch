@@ -62,6 +62,80 @@ Tensor::~Tensor() {
     }
 }
 
+
+// Assignment Operator
+Tensor& Tensor::operator=(const Tensor& other) {
+    if (this == &other) {
+        return *this;
+    }
+
+    free(dimensions);
+    free(values);
+    if (device.compare("cuda") == 0) {
+        cudaFree(valuesCuda);
+    }
+
+    this->totalVals = other.totalVals;
+    this->nDimensions = other.nDimensions;
+    this->device = other.device;
+
+    this->dimensions = (int *)malloc(nDimensions * sizeof(int));
+    for(int i = 0; i < nDimensions; i++) {
+        this->dimensions[i] = other.dimensions[i];
+    }
+
+    this->values = (float *)malloc(totalVals * sizeof(float));
+    for(int i = 0; i < totalVals; i++) {
+        this->values[i] = other.values[i];
+    }
+
+    if (device.compare("cuda") == 0) {
+        cudaMalloc(&valuesCuda, totalVals * sizeof(float));
+        cudaMemcpy(valuesCuda, other.valuesCuda, totalVals * sizeof(float), cudaMemcpyDeviceToDevice);
+    }
+
+    return *this;
+}
+
+
+// Equality Operator
+bool Tensor::operator==(const Tensor& other) {
+    if (this == &other) {
+        return true;
+    }
+    if (this->totalVals != other.totalVals || this->nDimensions != other.nDimensions || this->device != other.device) {
+        return false;
+    }
+    for (int i = 0; i < this->nDimensions; i++) {
+        if (this->dimensions[i] != other.dimensions[i]) {
+            return false;
+        }
+    }
+    for (int i = 0; i < this->totalVals; i++) {
+        if (this->values[i] != other.values[i]) {
+            return false;
+        }
+    }
+    if (this->device.compare("cuda") == 0 && other.device.compare("cuda") == 0) {
+        float* valuesCudaCopy = (float *)malloc(totalVals * sizeof(float));
+        cudaMemcpy(valuesCudaCopy, other.valuesCuda, totalVals * sizeof(float), cudaMemcpyDeviceToHost);
+
+        for (int i = 0; i < this->totalVals; i++) {
+            if (this->valuesCuda[i] != valuesCudaCopy[i]) {
+                free(valuesCudaCopy);
+                return false;
+            }
+        }   
+          free(valuesCudaCopy);
+    }
+    return true;
+}
+
+
+
+
+
+
 // Accessor functions
 // Get the total number of values in the tensor
 int Tensor::getTotalValues() {

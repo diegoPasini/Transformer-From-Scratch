@@ -14,17 +14,13 @@ class Tensor {
         ~Tensor();
 
         // Copy constructor and copy assignment operator
-        // If you are managing resources like dynamically allocated memory, you need to define them
         Tensor(const Tensor& other);
 
-        
+        // Reference Operator
+        Tensor& operator=(const Tensor& other);
 
-        //Tensor& operator=(const Tensor& other);
-
-        // Move constructor and move assignment operator
-        // For efficiently transferring resources
-        //Tensor(Tensor&& other) noexcept;
-        //Tensor& operator=(Tensor&& other) noexcept;
+        // Equality Operator
+        bool operator==(const Tensor& other);
 
         // Accessor functions
         int getTotalValues();

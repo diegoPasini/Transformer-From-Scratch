@@ -2,8 +2,7 @@
 #include <iostream>
 
 int main() {
-    // Test Constructor and Accessors
-
+    // Test Constructor, getDimensionsString, and indexing
     // Test 2 * 2 Matrix Without CUDA
     float* values = new float[4];
     for(int i = 0; i < 4; i++) {
@@ -70,7 +69,28 @@ int main() {
     cout << "Element at index t1: " << value3 << endl;
 
 
-    // Test Reshape and shape getString
+    // Test Reference and equality operator
+    Tensor t4 = t3;
+    cout << "Tensors 3 and 4 are the same: " << (t3 == t4) << endl;
+
+    // Make same matrix as t3
+    float* values4 = new float[36];
+    for(int i = 0; i < 36; i++) {
+        values4[i] = i;
+    }
+
+    int* dims4 = new int[3];
+    dims4[0] = 3;
+    dims4[1] = 4;
+    dims4[2] = 3;
+
+    Tensor t5(values4, dims4, 3);
+    cout << "Tensors 3 and 4 are the same: " << (t3 == t5) << endl;
+       
+
+    // Test Reshape
+
+
 
     // Test Tensor toString
 

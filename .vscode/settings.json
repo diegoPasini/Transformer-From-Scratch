@@ -57,6 +57,7 @@
   "C_Cpp_Runner.useLinkTimeOptimization": false,
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
   "files.associations": {
+    "random": "cpp",
     "array": "cpp",
     "atomic": "cpp",
     "bit": "cpp",
@@ -84,7 +85,6 @@
     "memory_resource": "cpp",
     "numeric": "cpp",
     "optional": "cpp",
-    "random": "cpp",
     "string": "cpp",
     "string_view": "cpp",
     "system_error": "cpp",
@@ -107,7 +107,6 @@
     "concepts": "cpp",
     "ios": "cpp",
     "xfacet": "cpp",
-    "xhash": "cpp",
     "xiosbase": "cpp",
     "xlocale": "cpp",
     "xlocinfo": "cpp",

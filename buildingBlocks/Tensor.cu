@@ -29,27 +29,6 @@ Tensor::Tensor(float* vals, int* dims, int numDims, string dev) {
     }
 }
 
-// Cuda Tensor Constructor
-Tensor::Tensor(float* valsCuda, int* dims, int numDims, string dev) { // Need to differentiate in some way
-    dimensions = (int *)malloc(numDims * sizeof(int));
-    int totalVals = 1;
-    for (int i = 0; i < numDims; i++) {
-        totalVals = totalVals * dims[i];
-        dimensions[i] = dims[i];
-    }
-    this->totalVals = totalVals;
-    this->nDimensions = numDims;
-    this->values = (float *)malloc(totalVals * sizeof(float));
-
-    if (dev.compare("cuda") == 0) {
-        this->device = dev;
-        cudaMalloc(&valuesCuda, totalVals * sizeof(float));
-        cudaMemcpy(valuesCuda, valsCuda, totalVals * sizeof(float), cudaMemcpyDeviceToDevice);
-    }
-}
-
-
-
 // Copy Constructor
 Tensor::Tensor(const Tensor& other) {
     this->totalVals = other.totalVals;
@@ -289,7 +268,7 @@ bool broadcastable(Tensor a, Tensor b) {
     for(int i = 0; i < min(a.nDimensions, b.nDimensions); i++) {
         int indexA = a.nDimensions - i - 1;
         int indexB = b.nDimensions - i - 1;
-        if((a.dimensions[indexA] != b.dimensions[indexB]) || a.dimensions[indexA] != 1 || b.dimensions[indexB] != 1 ) {
+        if((a.dimensions[indexA] != b.dimensions[indexB]) && a.dimensions[indexA] != 1 && b.dimensions[indexB] != 1 ) {
             return false;
         }
     }
@@ -347,26 +326,53 @@ Tensor operator+(Tensor a, Tensor b) {
     if(a.nDimensions == 1 && b.nDimensions == 1) {
         float* results = (float *)malloc(a.totalVals * sizeof(float));
         if(a.device == "cuda" && b.device == "cuda") {
-            vector_addition(a.getValues(), b.getValues(), results, a.totalVals); // Need to keep this on cuda and create tensor
-            return; // Create new Tensor
+            vector_addition(a.getValues(), b.getValues(), results, a.totalVals);
+            return Tensor(results, &(a.totalVals), 1, "cuda"); 
         } else {
             for(int i = 0; i < a.totalVals; i ++) {
                 results[i] = a.values[i] + b.values[i];
             }
-            return; // Create new tensor
+            return Tensor(results, &(a.totalVals), 1);
         }
     }
 
+    int* broadcastingShape = getShapeBroadcasting(a, b);
+    int numDims = max(a.nDimensions, b.nDimensions);
+    int totalValues = 1;
+    for (int i = 0; i < numDims; i++) {
+        totalValues *= broadcastingShape[i];
+    }
+
+    float* resultValues = (float *)malloc(totalValues * sizeof(float));
+
     // n Dimensional Matrix Addition:
-    if(a.nDimensions == b.nDimensions && a.nDimensions != 1) {
-        if(a.device == "cuda" && b.device == "cuda") {
-            vector_addition(a.getValues(), b.getValues(), results, a.totalVals); // Need to keep this on cuda and create tensor
-            return; // Create new Tensor
-        } else {
-            
+    if(a.device == "cuda" && b.device == "cuda") {
+        return Tensor(resultValues, broadcastingShape, numDims);
+    } else {
+        for(int i = 0; i < totalValues; i++) {
+            int idxA = 0;
+            int idxB = 0;
+            int multiplierA = 1;
+            int multiplierB = 1;
+            for(int dim = numDims - 1; dim >= 0; dim--) {
+                int dimA = dim - (numDims - a.nDimensions);
+                int dimB = dim - (numDims - b.nDimensions);
+                int dimIndex = (i / multiplierA) % broadcastingShape[dim];
+
+                if (dimA >= 0 && a.dimensions[dimA] != 1) {
+                    idxA += (dimIndex * multiplierA);
+                }
+                if (dimB >= 0 && b.dimensions[dimB] != 1) {
+                    idxB += (dimIndex * multiplierB);
+                }
+
+                if (dimA >= 0) multiplierA *= a.dimensions[dimA];
+                if (dimB >= 0) multiplierB *= b.dimensions[dimB];
+            }
+            resultValues[i] = a.values[idxA] + b.values[idxB];
         }
-    }  
-    else if 
+        return Tensor(resultValues, broadcastingShape, numDims);
+    }
 }
 
 // Matrix Scaling With Float

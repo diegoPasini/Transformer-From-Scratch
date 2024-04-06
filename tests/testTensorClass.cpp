@@ -100,11 +100,111 @@ int main() {
     // Test Tensor toString
     cout << t5.toString() << endl;
 
-    // Test Broadcastable
+    // Test Matrix Addition
+    // Test 1-dimensional tensors
+    float* values1D_1 = new float[3];
+    values1D_1[0] = 1;
+    values1D_1[1] = 2;
+    values1D_1[2] = 3;
+    int* dims1D_1 = new int[1];
+    dims1D_1[0] = 3;
+    Tensor t1D_1(values1D_1, dims1D_1, 1);
 
-    // Test checkSizes
+    float* values1D_2 = new float[3];
+    values1D_2[0] = 4;
+    values1D_2[1] = 5;
+    values1D_2[2] = 6;
+    int* dims1D_2 = new int[1];
+    dims1D_2[0] = 3;
+    Tensor t1D_2(values1D_2, dims1D_2, 1);
 
-    // Test Addition on Two of the same shaped array
+    Tensor result1D = t1D_1 + t1D_2;
+    cout << "Result1D: " << result1D.toString() << endl;
+
+    // Test 2-dimensional tensors
+    float* values2D_1 = new float[4];
+    values2D_1[0] = 1;
+    values2D_1[1] = 2;
+    values2D_1[2] = 3;
+    values2D_1[3] = 4;
+    int* dims2D_1 = new int[2];
+    dims2D_1[0] = 2;
+    dims2D_1[1] = 2;
+    Tensor t2D_1(values2D_1, dims2D_1, 2);
+
+    float* values2D_2 = new float[4];
+    values2D_2[0] = 5;
+    values2D_2[1] = 6;
+    values2D_2[2] = 7;
+    values2D_2[3] = 8;
+    int* dims2D_2 = new int[2];
+    dims2D_2[0] = 2;
+    dims2D_2[1] = 2;
+    Tensor t2D_2(values2D_2, dims2D_2, 2);
+
+    Tensor result2D = t2D_1 + t2D_2;
+    cout << "Result2D: " << result2D.toString() << endl;
+
+
+    // Test 3-dimensional tensors
+    float* values3D_1 = new float[8];
+    values3D_1[0] = 1;
+    values3D_1[1] = 2;
+    values3D_1[2] = 3;
+    values3D_1[3] = 4;
+    values3D_1[4] = 5;
+    values3D_1[5] = 6;
+    values3D_1[6] = 7;
+    values3D_1[7] = 8;
+    int* dims3D_1 = new int[3];
+    dims3D_1[0] = 2;
+    dims3D_1[1] = 2;
+    dims3D_1[2] = 2;
+    Tensor t3D_1(values3D_1, dims3D_1, 3);
+
+    float* values3D_2 = new float[8];
+    values3D_2[0] = 9;
+    values3D_2[1] = 10;
+    values3D_2[2] = 11;
+    values3D_2[3] = 12;
+    values3D_2[4] = 13;
+    values3D_2[5] = 14;
+    values3D_2[6] = 15;
+    values3D_2[7] = 16;
+    int* dims3D_2 = new int[3];
+    dims3D_2[0] = 2;
+    dims3D_2[1] = 2;
+    dims3D_2[2] = 2;
+    Tensor t3D_2(values3D_2, dims3D_2, 3);
+
+    Tensor result3D = t3D_1 + t3D_2;
+    cout << "Result3D: " << result3D.toString() << endl;
+
+
+    float* valuesBroadcast_1 = new float[6];
+    valuesBroadcast_1[0] = 1;
+    valuesBroadcast_1[1] = 2;
+    valuesBroadcast_1[2] = 3;
+    valuesBroadcast_1[3] = 4;
+    valuesBroadcast_1[4] = 5;
+    valuesBroadcast_1[5] = 6;
+    int* dimsBroadcast_1 = new int[2];
+    dimsBroadcast_1[0] = 2;
+    dimsBroadcast_1[1] = 3;
+    Tensor tBroadcast_1(valuesBroadcast_1, dimsBroadcast_1, 2);
+
+    float* valuesBroadcast_2 = new float[3];
+    valuesBroadcast_2[0] = 1;
+    valuesBroadcast_2[1] = 2;
+    valuesBroadcast_2[2] = 3;
+    int* dimsBroadcast_2 = new int[1];
+    dimsBroadcast_2[0] = 3;
+    Tensor tBroadcast_2(valuesBroadcast_2, dimsBroadcast_2, 1);
+
+    Tensor resultBroadcast = tBroadcast_1 + tBroadcast_2;
+    std::cout << "ResultBroadcast: " << resultBroadcast.toString() << std::endl;
+
+
 
     // Test Addition on two broadcasted arrays
 

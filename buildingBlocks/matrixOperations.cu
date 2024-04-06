@@ -32,6 +32,15 @@ __global__ void scaleMatrix(float* a, float* b, float scalar, int n, int m){
     }
 }
 
+// Dot Product For 1 Dimensions Arrays:
+__global__ void dotProduct(float* a, float* b, float& c, int n){
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	if(i < n) {
+		c += a[i] + b[i];
+	}
+}
+
+
 // Matrix Multiplication
 // Try Strassen Algorithm????
 __global__ void multiplyMatrices(float* a, float* b, float* c, int n, int m, int p){
@@ -45,18 +54,6 @@ __global__ void multiplyMatrices(float* a, float* b, float* c, int n, int m, int
 		c[j * p + i] = temp;
     }
 }
-
-
-
-// Matrix Transpose
-// __global__ void matrixTranspose(float *a, float *b, int n, int m) {
-// 	int i = blockIdx.x * blockDim.x + threadIdx.x;
-// 	int j = blockIdx.y * blockDim.y + threadIdx.y;
-// 	if (j < m && i < n) {
-// 		b[i * m + j] = a[i * n + j];
-// 	}
-// }
-
 
 
 namespace MatrixOperations {
@@ -95,6 +92,17 @@ namespace MatrixOperations {
 		cudaMemcpy(b, d_b, n*m*sizeof(float), cudaMemcpyDeviceToHost);
 	}
 
+	void dot_product(float* a, float *b, float& c, int n){
+		float *d_a, *d_b, *d_c;
+		cudaMalloc(&d_a, n*sizeof(float));
+		cudaMalloc(&d_b, n*sizeof(float));
+		cudaMalloc(&d_c, sizeof(float));
+		cudaMemcpy(d_a, a, n*sizeof(float), cudaMemcpyHostToDevice);
+		cudaMemcpy(d_b, b, n*sizeof(float), cudaMemcpyHostToDevice);
+		addVectors<<<1, n>>>(d_a, d_b, d_c, n);
+	}
+
+	
 
 	void matrix_multiplication(float* a, float* b, float* c, int n, int m, int p) {
 		float *d_a, *d_b, *d_c;

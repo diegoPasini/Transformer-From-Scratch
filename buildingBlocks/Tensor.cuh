@@ -54,14 +54,14 @@ class Tensor {
         // toString function
         string toString();
 
-
-        // Checks if two tensors are broadcastable
+        // TO - DO: FINISH BROADCASTABLE IMPLEMENTATION:
+        // // Checks if two tensors are broadcastable
         friend bool broadcastable(Tensor a, Tensor b);
 
         // Check if two tensors have an equal shape
         friend bool checkShape(Tensor a, Tensor b);
 
-        // Get Broadcastable Shape
+        // // Get Broadcastable Shape
         friend int* getShapeBroadcasting(Tensor a, Tensor b);
 
     private:

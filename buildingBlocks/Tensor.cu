@@ -315,13 +315,17 @@ int* getShapeBroadcasting(Tensor a, Tensor b) {
 }
 
 
+
+
 // Tensor Addition
+// Will be under assumption of same size matrices -- TO DO: Implement Broadcasting
 Tensor operator+(Tensor a, Tensor b) {
-    if (!(checkShape(a,b)) && !(broadcastable(a, b))) {
+    if (!checkShape(a,b)) {
         std::ostringstream msg;
-        msg << "Tensor of shape" << a.getDimensionsString() << "is not broadcastable with tensor of shape" << b.getDimensionsString() << ".";
+        msg << "Tensor of shape" << a.getDimensionsString() << "is not the same shape of tensor with shape" << b.getDimensionsString() << ".";
         throw std::invalid_argument(msg.str());
     }
+
 
     if(a.nDimensions == 1 && b.nDimensions == 1) {
         float* results = (float *)malloc(a.totalVals * sizeof(float));
@@ -336,43 +340,44 @@ Tensor operator+(Tensor a, Tensor b) {
         }
     }
 
-    int* broadcastingShape = getShapeBroadcasting(a, b);
-    int numDims = max(a.nDimensions, b.nDimensions);
-    int totalValues = 1;
-    for (int i = 0; i < numDims; i++) {
-        totalValues *= broadcastingShape[i];
-    }
+    // // int* broadcastingShape = getShapeBroadcasting(a, b);
+    // // int numDims = max(a.nDimensions, b.nDimensions);
+    // // int totalValues = 1;
+    // // for (int i = 0; i < numDims; i++) {
+    // //     totalValues *= broadcastingShape[i];
+    // // }
 
-    float* resultValues = (float *)malloc(totalValues * sizeof(float));
+    // float* resultValues = (float *)malloc(totalValues * sizeof(float));
 
-    // n Dimensional Matrix Addition:
-    if(a.device == "cuda" && b.device == "cuda") {
-        return Tensor(resultValues, broadcastingShape, numDims);
-    } else {
-        for(int i = 0; i < totalValues; i++) {
-            int idxA = 0;
-            int idxB = 0;
-            int multiplierA = 1;
-            int multiplierB = 1;
-            for(int dim = numDims - 1; dim >= 0; dim--) {
-                int dimA = dim - (numDims - a.nDimensions);
-                int dimB = dim - (numDims - b.nDimensions);
-                int dimIndex = (i / multiplierA) % broadcastingShape[dim];
+    // // n Dimensional Matrix Addition:
+    // if(a.device == "cuda" && b.device == "cuda") {
 
-                if (dimA >= 0 && a.dimensions[dimA] != 1) {
-                    idxA += (dimIndex * multiplierA);
-                }
-                if (dimB >= 0 && b.dimensions[dimB] != 1) {
-                    idxB += (dimIndex * multiplierB);
-                }
+    //     return Tensor(resultValues, broadcastingShape, numDims);
+    // } else {
+    //     // for(int i = 0; i < totalValues; i++) {
+    //     //     int idxA = 0;
+    //     //     int idxB = 0;
+    //     //     int multiplierA = 1;
+    //     //     int multiplierB = 1;
+    //     //     for(int dim = numDims - 1; dim >= 0; dim--) {
+    //     //         int dimA = dim - (numDims - a.nDimensions);
+    //     //         int dimB = dim - (numDims - b.nDimensions);
+    //     //         int dimIndex = (i / multiplierA) % broadcastingShape[dim];
 
-                if (dimA >= 0) multiplierA *= a.dimensions[dimA];
-                if (dimB >= 0) multiplierB *= b.dimensions[dimB];
-            }
-            resultValues[i] = a.values[idxA] + b.values[idxB];
-        }
-        return Tensor(resultValues, broadcastingShape, numDims);
-    }
+    //     //         if (dimA >= 0 && a.dimensions[dimA] != 1) {
+    //     //             idxA += (dimIndex * multiplierA);
+    //     //         }
+    //     //         if (dimB >= 0 && b.dimensions[dimB] != 1) {
+    //     //             idxB += (dimIndex * multiplierB);
+    //     //         }
+
+    //     //         if (dimA >= 0) multiplierA *= a.dimensions[dimA];
+    //     //         if (dimB >= 0) multiplierB *= b.dimensions[dimB];
+    //     //     }
+    //     //     resultValues[i] = a.values[idxA] + b.values[idxB];
+    //     // }
+    //     return Tensor(resultValues, broadcastingShape, numDims);
+    //}
 }
 
 // Matrix Scaling With Float
@@ -391,12 +396,76 @@ Tensor operator*(float a, Tensor b) {
 }
 
 
-// Tensor operator*(const Tensor& a, const Tensor& b) {
-//     if (!(broadcastable(a, b))) {
-//         std::ostringstream msg;
-//         msg << "Tensor of shape" << a.getDimensionsString() << "is not broadcastable with tensor of shape" << b.getDimensionsString() << ".";
-//         throw std::invalid_argument(msg.str());
-//     }
-    
-    
-// }
+Tensor operator*(Tensor a, Tensor b) {
+    if (!(checkShape(a, b))) {
+        std::ostringstream msg;
+        msg << "Tensor of shape" << a.getDimensionsString() << "does not have same shape as tensor with shape" << b.getDimensionsString() << ".";
+        throw std::invalid_argument(msg.str());
+    }
+
+    if (a.nDimensions >= 2 && b.nDimensions >= 2) {
+        int lastDimA = a.dimensions[a.nDimensions - 1];
+        int secondLastDimA = a.dimensions[a.nDimensions - 2];
+        int lastDimB = b.dimensions[b.nDimensions - 1];
+        int secondLastDimB = b.dimensions[b.nDimensions - 2];
+        
+        if (lastDimA != secondLastDimB || lastDimB != secondLastDimA) {
+            std::ostringstream msg;
+            msg << "Tensor of shape" << a.getDimensionsString() << "is not possible to matrix multiply with tensor of shape" << b.getDimensionsString() << ".";
+            throw std::invalid_argument(msg.str());
+        }
+    }
+
+    if(a.nDimensions == 1 && b.nDimensions == 1) {
+        if(a.device == "cuda" && b.device == "cuda") {
+            float* result = (float *)malloc(sizeof(float));
+            dot_product(a.getValues(), b.getValues(), result, a.totalVals);
+            int* resultDims = new int[1];
+            resultDims[0] = 1;
+            return Tensor(result, resultDims, 1, "cuda"); 
+        } else {
+            float result = 0.0;
+            for(int i = 0; i < a.totalVals; i ++) {
+                result = result + (a.values[i] * b.values[i]);
+            }
+            int* resultDims = new int[1];
+            resultDims[0] = 1;
+            return Tensor(&result, resultDims, 1);
+        }
+    } else {
+        int* resultingDims = new int[a.nDimensions];
+        for(int i = 0; i < a.nDimensions - 1; i++) {
+            resultingDims[i] = a.dimensions[i];
+        }
+        resultingDims[a.nDimensions - 1] = b.dimensions[b.nDimensions - 1];
+
+        int totalOutputVals = 1;
+        for (int i = 0; i < a.nDimensions; i++) {
+            totalOutputVals *= resultingDims[i];
+        }
+        float* outputValues = new float[totalOutputVals];
+
+        int batchSize = totalOutputVals / (resultingDims[a.nDimensions - 2] * resultingDims[a.nDimensions - 1]);
+        if(a.device == "cuda" && b.device == "cuda") {
+            
+        } else {
+            for (int batch = 0; batch < batchSize; batch++) {
+                for (int i = 0; i < resultingDims[a.nDimensions - 2]; i++) {
+                    for (int j = 0; j < resultingDims[a.nDimensions - 1]; j++) {
+                        float sum = 0.0;
+                        for (int k = 0; k < a.dimensions[a.nDimensions - 1]; k++) {
+                            int aIndex = batch * (a.dimensions[a.nDimensions - 2] * a.dimensions[a.nDimensions - 1]) + i * a.dimensions[a.nDimensions - 1] + k;
+                            int bIndex = batch * (b.dimensions[b.nDimensions - 2] * b.dimensions[b.nDimensions - 1]) + k * b.dimensions[b.nDimensions - 1] + j;
+                            sum += a.values[aIndex] * b.values[bIndex];
+                        }
+                        int outputIndex = batch * (a.dimensions[a.nDimensions - 2] * b.dimensions[b.nDimensions - 1]) + i * b.dimensions[b.nDimensions - 1] + j;
+                        outputValues[outputIndex] = sum;
+                    }
+                }
+            }
+
+            return Tensor(outputValues, resultingDims, a.nDimensions);
+
+        }
+    }
+}

@@ -180,32 +180,6 @@ int main() {
     Tensor result3D = t3D_1 + t3D_2;
     cout << "Result3D: " << result3D.toString() << endl;
 
-
-    float* valuesBroadcast_1 = new float[6];
-    valuesBroadcast_1[0] = 1;
-    valuesBroadcast_1[1] = 2;
-    valuesBroadcast_1[2] = 3;
-    valuesBroadcast_1[3] = 4;
-    valuesBroadcast_1[4] = 5;
-    valuesBroadcast_1[5] = 6;
-    int* dimsBroadcast_1 = new int[2];
-    dimsBroadcast_1[0] = 2;
-    dimsBroadcast_1[1] = 3;
-    Tensor tBroadcast_1(valuesBroadcast_1, dimsBroadcast_1, 2);
-
-    float* valuesBroadcast_2 = new float[3];
-    valuesBroadcast_2[0] = 1;
-    valuesBroadcast_2[1] = 2;
-    valuesBroadcast_2[2] = 3;
-    int* dimsBroadcast_2 = new int[1];
-    dimsBroadcast_2[0] = 3;
-    Tensor tBroadcast_2(valuesBroadcast_2, dimsBroadcast_2, 1);
-
-    Tensor resultBroadcast = tBroadcast_1 + tBroadcast_2;
-    std::cout << "ResultBroadcast: " << resultBroadcast.toString() << std::endl;
-
-
-
     // Test Addition on two broadcasted arrays
 
     // Matrix/Vector Multiplication

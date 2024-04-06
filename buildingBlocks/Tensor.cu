@@ -29,6 +29,7 @@ Tensor::Tensor(float* vals, int* dims, int numDims, string dev) {
     }
 }
 
+
 // Copy Constructor
 Tensor::Tensor(const Tensor& other) {
     this->totalVals = other.totalVals;
@@ -48,6 +49,26 @@ Tensor::Tensor(const Tensor& other) {
     if (device.compare("cuda") == 0) {
         cudaMalloc(&valuesCuda, totalVals * sizeof(float));
         cudaMemcpy(valuesCuda, other.valuesCuda, totalVals * sizeof(float), cudaMemcpyDeviceToDevice);
+    }
+}
+
+
+// Cuda Memory Reference constructor:
+Tensor::Tensor(float** c_device, int* dims, int numDims, string dev){
+    dimensions = (int *)malloc(numDims * sizeof(int));
+    int totalVals = 1;
+    for(int i = 0; i < numDims; i++) {
+        totalVals *= dims[i];
+        dimensions[i] = dims[i];
+    }
+    this->totalVals = totalVals;
+    this->nDimensions = numDims;
+    this->device = dev;
+
+    if (dev == "cuda") {
+        valuesCuda = *c_device;
+    } else {
+        std::cerr << "Error: Non-CUDA device specified for CUDA memory constructor." << std::endl;
     }
 }
 
@@ -396,6 +417,7 @@ Tensor operator*(float a, Tensor b) {
 }
 
 
+// Matrix Multiplication
 Tensor operator*(Tensor a, Tensor b) {
     if (!(checkShape(a, b))) {
         std::ostringstream msg;
@@ -444,10 +466,20 @@ Tensor operator*(Tensor a, Tensor b) {
             totalOutputVals *= resultingDims[i];
         }
         float* outputValues = new float[totalOutputVals];
-
+        int n = totalOutputVals / (a.dimensions[a.nDimensions - 2] * b.dimensions[b.nDimensions - 1]);
+        int m = a.dimensions[a.nDimensions - 1]; 
+        int p = b.dimensions[b.nDimensions - 1];
         int batchSize = totalOutputVals / (resultingDims[a.nDimensions - 2] * resultingDims[a.nDimensions - 1]);
         if(a.device == "cuda" && b.device == "cuda") {
-            
+            float* c_device;
+            cudaMalloc((void**)&c_device, n * p * sizeof(float));
+            for (int batch = 0; batch < batchSize; batch++) {
+                float* a_batch = a.getValues() + batch * (a.dimensions[a.nDimensions - 2] * m);
+                float* b_batch = b.getValues() + batch * (b.dimensions[b.nDimensions - 2] * p);
+                float* c_batch = c_device + batch * (a.dimensions[a.nDimensions - 2] * p);
+                matrix_multiplication(a_batch, b_batch, c_batch, n, m, p);
+            }
+            return Tensor(&c_device, resultingDims, a.nDimensions, "cuda");
         } else {
             for (int batch = 0; batch < batchSize; batch++) {
                 for (int i = 0; i < resultingDims[a.nDimensions - 2]; i++) {

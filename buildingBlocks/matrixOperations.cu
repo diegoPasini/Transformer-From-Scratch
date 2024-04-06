@@ -33,10 +33,10 @@ __global__ void scaleMatrix(float* a, float* b, float scalar, int n, int m){
 }
 
 // Dot Product For 1 Dimensions Arrays:
-__global__ void dotProduct(float* a, float* b, float& c, int n){
+__global__ void dotProduct(float* a, float* b, float* c, int n){
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 	if(i < n) {
-		c += a[i] + b[i];
+		c[0] += a[i] + b[i];
 	}
 }
 
@@ -58,75 +58,33 @@ __global__ void multiplyMatrices(float* a, float* b, float* c, int n, int m, int
 
 namespace MatrixOperations {
 	void vector_addition(float* a, float* b, float* c, int n){		
-		float *d_a, *d_b, *d_c;
-		cudaMalloc(&d_a, n*sizeof(float));
-		cudaMalloc(&d_b, n*sizeof(float));
-		cudaMalloc(&d_c, n*sizeof(float));
-		cudaMemcpy(d_a, a, n*sizeof(float), cudaMemcpyHostToDevice);
-		cudaMemcpy(d_b, b, n*sizeof(float), cudaMemcpyHostToDevice);
-		addVectors<<<1, n>>>(d_a, d_b, d_c, n);
-		cudaMemcpy(c, d_c, n*sizeof(float), cudaMemcpyDeviceToHost);
+		addVectors<<<1, n>>>(a, b, c, n);
 	} 
 
 	void matrix_addition(float* a, float* b, float* c, int n, int m) {
-		float *d_a, *d_b, *d_c;
-		cudaMalloc(&d_a, n*m*sizeof(float));
-		cudaMalloc(&d_b, n*m*sizeof(float));
-		cudaMalloc(&d_c, n*m*sizeof(float));
-		cudaMemcpy(d_a, a, n*m*sizeof(float), cudaMemcpyHostToDevice);
-		cudaMemcpy(d_b, b, n*m*sizeof(float), cudaMemcpyHostToDevice);
 		dim3 blockSize(16, 16); 
 		dim3 gridSize((n + blockSize.x - 1) / blockSize.x, (m + blockSize.y - 1) / blockSize.y);
-		addMatrices<<<gridSize, blockSize>>>(d_a, d_b, d_c, n, m);
-		cudaMemcpy(c, d_c, n*m*sizeof(float), cudaMemcpyDeviceToHost);
+		addMatrices<<<gridSize, blockSize>>>(a, b, c, n, m);
+		cudaDeviceSynchronize();
 	}
 
 	void matrix_scaling(float* a, float* b, float scalar, int n, int m) {
-		float *d_a, *d_b;
-		cudaMalloc(&d_a, n*m*sizeof(float));
-		cudaMalloc(&d_b, n*m*sizeof(float));
-		cudaMemcpy(d_a, a, n*m*sizeof(float), cudaMemcpyHostToDevice);
 		dim3 blockSize(16, 16);
 		dim3 gridSize((n + blockSize.x - 1) / blockSize.x, (m + blockSize.y - 1) / blockSize.y);
-		scaleMatrix<<<gridSize, blockSize>>>(d_a, d_b, scalar, n, m);
-		cudaMemcpy(b, d_b, n*m*sizeof(float), cudaMemcpyDeviceToHost);
+		scaleMatrix<<<gridSize, blockSize>>>(a, b, scalar, n, m);
+		cudaDeviceSynchronize();
+
 	}
 
-	void dot_product(float* a, float *b, float& c, int n){
-		float *d_a, *d_b, *d_c;
-		cudaMalloc(&d_a, n*sizeof(float));
-		cudaMalloc(&d_b, n*sizeof(float));
-		cudaMalloc(&d_c, sizeof(float));
-		cudaMemcpy(d_a, a, n*sizeof(float), cudaMemcpyHostToDevice);
-		cudaMemcpy(d_b, b, n*sizeof(float), cudaMemcpyHostToDevice);
-		addVectors<<<1, n>>>(d_a, d_b, d_c, n);
+	void dot_product(float* a, float *b, float* c, int n){
+		addVectors<<<1, n>>>(a, b, c, n);
 	}
-
-	
 
 	void matrix_multiplication(float* a, float* b, float* c, int n, int m, int p) {
-		float *d_a, *d_b, *d_c;
-		cudaMalloc(&d_a, n*m*sizeof(float));
-		cudaMalloc(&d_b, n*p * sizeof(float));
-		cudaMalloc(&d_c, m*p*sizeof(float));
-        cudaMemcpy(d_a, a, n*m*sizeof(float), cudaMemcpyHostToDevice);
-        cudaMemcpy(d_b, b, n*p*sizeof(float), cudaMemcpyHostToDevice);
 		dim3 blockSize(16, 16);
 		dim3 gridDim((p+blockSize.x - 1)/blockSize.x, (m + blockSize.y-1)/blockSize.y);
-		multiplyMatrices<<<gridDim, blockSize>>>(d_a, d_b, d_c, n, m, p);
-		cudaMemcpy(c, d_c, m*p*sizeof(float), cudaMemcpyDeviceToHost);
+		multiplyMatrices<<<gridDim, blockSize>>>(a, b, c, n, m, p);
+		cudaDeviceSynchronize();
 	}
-
-	// void matrix_transpose(float *a, float *b, int n, int m) {
-	// 	float *d_a, *d_b;
-	// 	cudaMalloc(&d_a, n*m*sizeof(float));
-	// 	cudaMalloc(&d_b, n*m*sizeof(float));
-	// 	cudaMemcpy(d_a, a, n*m*sizeof(float), cudaMemcpyHostToDevice);
-	// 	dim3 blockSize(16, 16);
-	// 	dim3 gridSize((n + blockSize.x - 1) / blockSize.x, (m + blockSize.y - 1) / blockSize.y);
-	// 	matrixTranspose<<<gridSize, blockSize>>>(d_a, d_b, n, m);
-	// 	cudaMemcpy(b, d_b, n*m*sizeof(float), cudaMemcpyDeviceToHost);
-	// }
-
 
 }

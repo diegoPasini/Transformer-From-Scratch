@@ -8,7 +8,9 @@ using namespace std;
 class Tensor {
     public:
         // Constructor: Initializes a tensor with given values, dimensions, and optionally specifies the device
-        Tensor(float* vals, int* dims, int numDims, std::string dev = "");
+        Tensor(float* vals, int* dims, int numDims, string dev = "");
+
+        Tensor(float** c_device, int* dims, int numDims, string dev = "");
 
         // Destructor: Responsible for freeing allocated resources
         ~Tensor();
@@ -28,7 +30,6 @@ class Tensor {
         int* getDimensions();
         string getDevice();
         float* getValues();
-        float* getValuesCuda();
 
         // Operation to reshape the tensor
         void reshape(int* newDims, int newNumDims);

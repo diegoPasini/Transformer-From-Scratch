@@ -131,56 +131,6 @@ bool Tensor::operator==(const Tensor& other) {
     return true;
 }
 
-
-
-
-
-
-// Accessor functions
-// Get the total number of values in the tensor
-int Tensor::getTotalValues() {
-    return totalVals;
-}
-
-// Get the number of dimensions in the tensor
-int Tensor::getNumDimensions() {
-    return nDimensions;
-}
-
-// Get the dimensions of the tensor
-int* Tensor::getDimensions() {
-    int* dimensionsCopy = (int *)malloc(nDimensions * sizeof(int));
-    for(int i = 0; i < nDimensions; i++) {
-        dimensionsCopy[i] = dimensions[i];
-    }
-    return dimensionsCopy;
-}
-
-// Get the device type of the tensor
-string Tensor::getDevice() {
-    return device;
-}
-
-// Get the values of the tensor
-float* Tensor::getValues() {
-    float* valuesCopy = (float *)malloc(totalVals * sizeof(float));
-    for(int i = 0; i < totalVals; i++) {
-        valuesCopy[i] = values[i];
-    }
-    return valuesCopy;
-}
-
-// Get the CUDA device values of the tensor
-// Maybe make this the return in the original values for simplicity.
-float* Tensor::getValuesCuda() {
-    if (device.compare("cuda") != 0) {
-        std::invalid_argument("CUDA not enabled on tensor, so values cannot be accessed");
-    }
-    float* valuesCudaCopy = (float *)malloc(totalVals * sizeof(float));
-    cudaMemcpy(valuesCudaCopy, valuesCuda, totalVals * sizeof(float), cudaMemcpyDeviceToHost);
-    return valuesCudaCopy;
-}
-
 // reshape function
 void Tensor::reshape(int* newDims, int newNumDims) {
     int totalNewVals = 1;
@@ -201,8 +151,43 @@ void Tensor::reshape(int* newDims, int newNumDims) {
 }
 
 
+// Accessor functions
+int Tensor::getTotalValues() {
+    return totalVals;
+}
+
+int Tensor::getNumDimensions() {
+    return nDimensions;
+}
+
+int* Tensor::getDimensions() {
+    int* dimensionsCopy = (int *)malloc(nDimensions * sizeof(int));
+    for(int i = 0; i < nDimensions; i++) {
+        dimensionsCopy[i] = dimensions[i];
+    }
+    return dimensionsCopy;
+}
+
+string Tensor::getDevice() {
+    return device;
+}
+
+// Get Values - Returns CUDA values if enabled
+float* Tensor::getValues() {
+    float* valuesCopy = (float *)malloc(totalVals * sizeof(float));
+    if (device.compare("cuda") != 0) {
+        for(int i = 0; i < totalVals; i++) {
+            valuesCopy[i] = values[i];
+        }
+    } else {
+        cudaMemcpy(valuesCopy, valuesCuda, totalVals * sizeof(float), cudaMemcpyDeviceToHost);
+    }
+    return valuesCopy;
+}
+
+
 //Operator Overloading
-// Accessing Method
+// Indexing Method
 float Tensor::operator[](int* indices) {
     int calculatedIndex = 0;
     for (int i = 0; i < nDimensions; i++) {
@@ -231,6 +216,51 @@ string Tensor::getDimensionsString() {
     }
     dimensionsString += ")";
     return dimensionsString;
+}
+
+// toString function
+string Tensor::toString() {
+    ostringstream oss;
+    if (nDimensions == 1) {
+        oss << "[";
+        for (int i = 0; i < totalVals; ++i) {
+            oss << values[i];
+            if (i < totalVals - 1) oss << ", ";
+        }
+        oss << "]";
+    } else if (nDimensions == 2) {
+        oss << "[";
+        for (int i = 0; i < dimensions[0]; ++i) {
+            oss << "[";
+            for (int j = 0; j < dimensions[1]; ++j) {
+                oss << values[i * dimensions[1] + j];
+                if (j < dimensions[1] - 1) oss << ", ";
+            }
+            oss << "]";
+            if (i < dimensions[0] - 1) oss << ",\n ";
+        }
+        oss << "]";
+    } else if (nDimensions == 3) {
+        oss << "[";
+        for (int i = 0; i < dimensions[0]; ++i) {
+            oss << "[";
+            for (int j = 0; j < dimensions[1]; ++j) {
+                oss << "[";
+                for (int k = 0; k < dimensions[2]; ++k) {
+                    oss << values[i * dimensions[1] * dimensions[2] + j * dimensions[2] + k];
+                    if (k < dimensions[2] - 1) oss << ", ";
+                }
+                oss << "]";
+                if (j < dimensions[1] - 1) oss << ",\n  ";
+            }
+            oss << "]";
+            if (i < dimensions[0] - 1) oss << ",\n ";
+        }
+        oss << "]";
+    } else {
+        oss << "Tensor of shape " << getDimensionsString() << " with " << totalVals << " values";
+    }
+    return oss.str();
 }
 
 // Non CUDA Tensor Operations

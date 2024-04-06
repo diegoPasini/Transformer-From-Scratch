@@ -16,7 +16,7 @@ class Tensor {
         // Copy constructor and copy assignment operator
         Tensor(const Tensor& other);
 
-        // Reference Operator
+        // Assignment Operator
         Tensor& operator=(const Tensor& other);
 
         // Equality Operator
@@ -33,17 +33,30 @@ class Tensor {
         // Operation to reshape the tensor
         void reshape(int* newDims, int newNumDims);
 
-        // Operator overloads for accessing elements and tensor operations
+        
+        // Indexing Operator
         float operator[](int* indices);
+
+        // Matrix Addition
         friend Tensor operator+(Tensor a, Tensor b);
+
+        // Matrix Scaling
         friend Tensor operator*(float a, Tensor b);
+
+        // Matrix Multiplication
         friend Tensor operator*(Tensor a, Tensor b);
 
-        // Utility functions
+        // toString Dimensions
         string getDimensionsString();
+
+        // toString function
+        string toString();
+
 
         // Checks if two tensors are broadcastable
         friend bool broadcastable(Tensor a, Tensor b);
+
+        // Check if two tensors have an equal shape
         friend bool checkShape(Tensor a, Tensor b);
 
     private:
@@ -55,4 +68,4 @@ class Tensor {
         string device = ""; // The computing device, e.g., "cuda" for CUDA devices
 };
 
-#endif // TENSOR_CUH_
+#endif

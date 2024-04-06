@@ -89,11 +89,16 @@ int main() {
        
 
     // Test Reshape
-
+    int* indexes3 = new int[3];
+    indexes3[0] = 1;
+    indexes3[1] = 9;
+    indexes3[2] = 4;
+    t5.reshape(indexes3, 3);
+    cout << "Tensor 5 Shape: " << t5.getDimensionsString() << endl;
 
 
     // Test Tensor toString
-
+    cout << t5.toString() << endl;
 
     // Test Broadcastable
 

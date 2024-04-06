@@ -4,7 +4,7 @@
 #include "matrixOperations.cuh"
 #include <cmath>
 
-
+using namespace std;
 // Vector Addition
 __global__ void addVectors(float* a, float* b, float *c, int size){
 	int i = threadIdx.x;
@@ -34,9 +34,9 @@ __global__ void scaleMatrix(float* a, float* b, float scalar, int n, int m){
 
 // Dot Product For 1 Dimensions Arrays:
 __global__ void dotProduct(float* a, float* b, float* c, int n){
-	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	int i = threadIdx.x;
 	if(i < n) {
-		c[0] += a[i] + b[i];
+		c[0] = c[0] + a[i] * b[i];
 	}
 }
 
@@ -59,6 +59,7 @@ __global__ void multiplyMatrices(float* a, float* b, float* c, int n, int m, int
 namespace MatrixOperations {
 	void vector_addition(float* a, float* b, float* c, int n){		
 		addVectors<<<1, n>>>(a, b, c, n);
+		cudaDeviceSynchronize();
 	} 
 
 	void matrix_addition(float* a, float* b, float* c, int n, int m) {
@@ -78,6 +79,7 @@ namespace MatrixOperations {
 
 	void dot_product(float* a, float *b, float* c, int n){
 		addVectors<<<1, n>>>(a, b, c, n);
+		cudaDeviceSynchronize();
 	}
 
 	void matrix_multiplication(float* a, float* b, float* c, int n, int m, int p) {

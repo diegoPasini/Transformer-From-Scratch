@@ -178,14 +178,57 @@ int main() {
     Tensor t3D_2(values3D_2, dims3D_2, 3);
 
     Tensor result3D = t3D_1 + t3D_2;
-    cout << "Result3D: " << result3D.toString() << endl;
+    cout << "Result3D:" << result3D.toString() << endl;
 
-    // Test Addition on two broadcasted arrays
+    // // Matrix/Vector Multiplication
+    Tensor t10 = t1;
+    cout << "Tensor 1: " << t1.toString() << endl;
+    cout << "Tensor 10: " << t10.toString() << endl;
+    Tensor result4 = t1 * t10;
+    cout << "Result4: " << result4.toString() << endl;
 
-    // Matrix/Vector Multiplication
+    Tensor t11 = t3D_1;
+    Tensor result5 = t3D_1 * t11;
+    cout << "Result5: " << result5.toString() << endl;
 
+    // float* values = new float[4];
+    // for(int i = 0; i < 4; i++) {
+    //     values[i] = i;
+    // }
 
+    // int* dims = new int[2];
+    // for(int j = 0; j < 2; j++) {
+    //     dims[j] = 2;
+    // }
 
+    Tensor tensorMultCuda(values, dims, 2, "cuda");
+    Tensor newTensor = tensorMultCuda;
+    cout << "Cuda Tensor" << tensorMultCuda.toString() << endl;
+    cout << "Cuda Tensor 2" << newTensor.toString() << endl;
+
+    // Tensor multipliedTensor = tensorMultCuda * newTensor;
+
+    float* tensor1D = new float[4];
+    tensor1D[0] = 0.0; 
+    tensor1D[1] = 1.0; 
+    tensor1D[2] = 2.0; 
+    tensor1D[3] = 3.0;
+    int* oneD = new int[1]; 
+    oneD[0] = 4;
+    Tensor one_dimensional(tensor1D ,oneD, 1, "cuda");
+    Tensor two_dimensional(tensor1D ,oneD, 1, "cuda");
+    Tensor newOneDTensor = one_dimensional * two_dimensional;
+    cout << "One D Dot Product << " << newOneDTensor.toString() << endl;
+    //float* 
+    //Tensor 1DTensor();
+
+    // int* index = new int[2];
+    // index[0] = 1;
+    // index[1] = 1;
+    // float value = t1[index];
+    // cout << "Element at index t1: " << value << endl;
+
+    
 
 
     // CUDA Testing

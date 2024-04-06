@@ -46,6 +46,8 @@ class Tensor {
         // Matrix Multiplication
         friend Tensor operator*(Tensor a, Tensor b);
 
+
+
         // toString Dimensions
         string getDimensionsString();
 
@@ -58,6 +60,9 @@ class Tensor {
 
         // Check if two tensors have an equal shape
         friend bool checkShape(Tensor a, Tensor b);
+
+        // Get Broadcastable Shape
+        friend int* getShapeBroadcasting(Tensor a, Tensor b);
 
     private:
         float* values;     // Pointer to the tensor's values

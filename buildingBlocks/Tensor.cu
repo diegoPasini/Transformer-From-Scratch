@@ -29,6 +29,26 @@ Tensor::Tensor(float* vals, int* dims, int numDims, string dev) {
     }
 }
 
+// Cuda Tensor Constructor
+Tensor::Tensor(float* valsCuda, int* dims, int numDims, string dev) { // Need to differentiate in some way
+    dimensions = (int *)malloc(numDims * sizeof(int));
+    int totalVals = 1;
+    for (int i = 0; i < numDims; i++) {
+        totalVals = totalVals * dims[i];
+        dimensions[i] = dims[i];
+    }
+    this->totalVals = totalVals;
+    this->nDimensions = numDims;
+    this->values = (float *)malloc(totalVals * sizeof(float));
+
+    if (dev.compare("cuda") == 0) {
+        this->device = dev;
+        cudaMalloc(&valuesCuda, totalVals * sizeof(float));
+        cudaMemcpy(valuesCuda, valsCuda, totalVals * sizeof(float), cudaMemcpyDeviceToDevice);
+    }
+}
+
+
 
 // Copy Constructor
 Tensor::Tensor(const Tensor& other) {
@@ -263,30 +283,6 @@ string Tensor::toString() {
     return oss.str();
 }
 
-// Non CUDA Tensor Operations
-
-// Tensor::Tensor {
-//     private:
-//         // The values will be stored using a pointer. This helps with efficiency for retrieval
-//         float* values;
-//         int totalVals;
-//         float* valuesCuda;
-//         // Dimensions are also stored with a pointer and with an n value for teh number of dimensions
-//         int* dimensions;
-//         int nDimensions;
-
-//         string device = "";
-//         // Constructors
-
-        
-
-        
-
-// };
-
-
-
-
 // Function to check if two tensors are broadcastable
 // Check numpy documentation for more info --> https://numpy.org/doc/stable/user/basics.broadcasting.html
 bool broadcastable(Tensor a, Tensor b) {
@@ -299,6 +295,8 @@ bool broadcastable(Tensor a, Tensor b) {
     }
     return true;
 }
+
+
 
 // Check if both tensor shapes are exactly equal
 bool checkShape(Tensor a, Tensor b){
@@ -313,6 +311,31 @@ bool checkShape(Tensor a, Tensor b){
     return true;
 }
 
+
+// Return the broadcasting shape for the new array
+int* getShapeBroadcasting(Tensor a, Tensor b) {
+    int* dimensionsArray = (int *)malloc(max(a.nDimensions, b.nDimensions) * sizeof(int));
+    for(int i = 0; i < max(a.nDimensions, b.nDimensions); i++) {
+        if (i < a.nDimensions && i < b.nDimensions) {
+            if (a.dimensions[i] == b.dimensions[i]) {
+                dimensionsArray[i] = a.dimensions[i];
+            } else if (a.dimensions[i] == 1) {
+                dimensionsArray[i] = b.dimensions[i];
+            } else if (b.dimensions[i] == 1) {
+                dimensionsArray[i] = a.dimensions[i];
+            } else {
+                dimensionsArray[i] = -1;
+            }
+        } else if (i < a.nDimensions) {
+            dimensionsArray[i] = a.dimensions[i];
+        } else {
+            dimensionsArray[i] = b.dimensions[i];
+        }
+    }
+    return dimensionsArray;
+}
+
+
 // Tensor Addition
 Tensor operator+(Tensor a, Tensor b) {
     if (!(checkShape(a,b)) && !(broadcastable(a, b))) {
@@ -321,8 +344,29 @@ Tensor operator+(Tensor a, Tensor b) {
         throw std::invalid_argument(msg.str());
     }
 
-    
+    if(a.nDimensions == 1 && b.nDimensions == 1) {
+        float* results = (float *)malloc(a.totalVals * sizeof(float));
+        if(a.device == "cuda" && b.device == "cuda") {
+            vector_addition(a.getValues(), b.getValues(), results, a.totalVals); // Need to keep this on cuda and create tensor
+            return; // Create new Tensor
+        } else {
+            for(int i = 0; i < a.totalVals; i ++) {
+                results[i] = a.values[i] + b.values[i];
+            }
+            return; // Create new tensor
+        }
+    }
 
+    // n Dimensional Matrix Addition:
+    if(a.nDimensions == b.nDimensions && a.nDimensions != 1) {
+        if(a.device == "cuda" && b.device == "cuda") {
+            vector_addition(a.getValues(), b.getValues(), results, a.totalVals); // Need to keep this on cuda and create tensor
+            return; // Create new Tensor
+        } else {
+            
+        }
+    }  
+    else if 
 }
 
 // Matrix Scaling With Float

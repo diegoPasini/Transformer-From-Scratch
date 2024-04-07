@@ -5,16 +5,21 @@
 int main() {
     Timer t;
 
+    float* values4 = new float[10000 * 10000];
+    for(int i = 0; i < 10000 * 10000; i++) {
+        values4[i] = i;
+    }
+
+    int* dims4 = new int[2];
+    dims4[0] = 10000;
+    dims4[1] = 10000;
+
+    Tensor t1(values4, dims4, 2, "cuda");
+    Tensor t2 = t1;
+
     t.start();
-    std::this_thread::sleep_for(std::chrono::milliseconds(201));
+    Tensor t3 = t2 + t1;
     t.stop();
     t.printLastTime();
-
-    t.start();
-    std::this_thread::sleep_for(std::chrono::seconds(3));
-    t.stop();
-
-    t.printLoggedTimes(); // This will print 2 seconds and 3 seconds
-
     return 0;
 }

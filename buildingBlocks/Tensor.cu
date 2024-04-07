@@ -547,9 +547,9 @@ Tensor operator*(Tensor a, Tensor b) {
                 matrix_multiplication(a_batch, b_batch, c_batch, n, m, p);
 
             }
-            float* host_values = (float *)malloc(m * p * batchSize * sizeof(float));
-            cudaMemcpy(host_values, zeros_device, m* p * batchSize  * sizeof(float), cudaMemcpyDeviceToHost);
-            return Tensor(host_values, resultingDims, a.nDimensions, "cuda");
+            //float* host_values = (float *)malloc(m * p * batchSize * sizeof(float));
+            //cudaMemcpy(host_values, zeros_device, m* p * batchSize  * sizeof(float), cudaMemcpyDeviceToHost);
+            return Tensor(&zeros_device, resultingDims, a.nDimensions, "cuda");
         } else {
             for (int batch = 0; batch < batchSize; batch++) {
                 for (int i = 0; i < resultingDims[a.nDimensions - 2]; i++) {

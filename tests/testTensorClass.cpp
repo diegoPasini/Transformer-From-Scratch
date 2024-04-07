@@ -108,7 +108,7 @@ int main() {
     values1D_1[2] = 3;
     int* dims1D_1 = new int[1];
     dims1D_1[0] = 3;
-    Tensor t1D_1(values1D_1, dims1D_1, 1);
+    Tensor t1D_1(values1D_1, dims1D_1, 1, "cuda");
 
     float* values1D_2 = new float[3];
     values1D_2[0] = 4;
@@ -116,7 +116,7 @@ int main() {
     values1D_2[2] = 6;
     int* dims1D_2 = new int[1];
     dims1D_2[0] = 3;
-    Tensor t1D_2(values1D_2, dims1D_2, 1);
+    Tensor t1D_2(values1D_2, dims1D_2, 1, "cuda");
 
     Tensor result1D = t1D_1 + t1D_2;
     cout << "Result1D: " << result1D.toString() << endl;
@@ -160,7 +160,7 @@ int main() {
     dims3D_1[0] = 2;
     dims3D_1[1] = 2;
     dims3D_1[2] = 2;
-    Tensor t3D_1(values3D_1, dims3D_1, 3);
+    Tensor t3D_1(values3D_1, dims3D_1, 3, "cuda");
 
     float* values3D_2 = new float[8];
     values3D_2[0] = 9;
@@ -175,7 +175,7 @@ int main() {
     dims3D_2[0] = 2;
     dims3D_2[1] = 2;
     dims3D_2[2] = 2;
-    Tensor t3D_2(values3D_2, dims3D_2, 3);
+    Tensor t3D_2(values3D_2, dims3D_2, 3, "cuda");
 
     Tensor result3D = t3D_1 + t3D_2;
     cout << "Result3D:" << result3D.toString() << endl;
@@ -191,34 +191,35 @@ int main() {
     Tensor result5 = t3D_1 * t11;
     cout << "Result5: " << result5.toString() << endl;
 
-    // float* values = new float[4];
-    // for(int i = 0; i < 4; i++) {
-    //     values[i] = i;
-    // }
+     float* values5 = new float[8];
+     for(int i = 0; i < 8; i++) {
+         values5[i] = i;
+    }
 
-    // int* dims = new int[2];
-    // for(int j = 0; j < 2; j++) {
-    //     dims[j] = 2;
-    // }
+     int* dims5 = new int[3];
+     for(int j = 0; j < 3; j++) {
+         dims5[j] = 2;
+    }
 
-    Tensor tensorMultCuda(values, dims, 2, "cuda");
+    Tensor tensorMultCuda(values5, dims5, 3, "cuda");
     Tensor newTensor = tensorMultCuda;
     cout << "Cuda Tensor" << tensorMultCuda.toString() << endl;
     cout << "Cuda Tensor 2" << newTensor.toString() << endl;
 
-    // Tensor multipliedTensor = tensorMultCuda * newTensor;
+    Tensor multipliedTensor = tensorMultCuda * newTensor;
+    cout << "One D Dot Product " << multipliedTensor.toString() << endl;
 
-    float* tensor1D = new float[4];
-    tensor1D[0] = 0.0; 
-    tensor1D[1] = 1.0; 
-    tensor1D[2] = 2.0; 
-    tensor1D[3] = 3.0;
-    int* oneD = new int[1]; 
-    oneD[0] = 4;
-    Tensor one_dimensional(tensor1D ,oneD, 1, "cuda");
-    Tensor two_dimensional(tensor1D ,oneD, 1, "cuda");
-    Tensor newOneDTensor = one_dimensional * two_dimensional;
-    cout << "One D Dot Product << " << newOneDTensor.toString() << endl;
+    // float* tensor1D = new float[4];
+    // tensor1D[0] = 0.0; 
+    // tensor1D[1] = 1.0; 
+    // tensor1D[2] = 2.0; 
+    // tensor1D[3] = 3.0;
+    // int* oneD = new int[1]; 
+    // oneD[0] = 4;
+    // Tensor one_dimensional(tensor1D ,oneD, 1, "cuda");
+    // Tensor two_dimensional(tensor1D ,oneD, 1, "cuda");
+    // Tensor newOneDTensor = one_dimensional * two_dimensional;
+    // cout << "One D Dot Product << " << newOneDTensor.toString() << endl;
     //float* 
     //Tensor 1DTensor();
 

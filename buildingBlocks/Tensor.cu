@@ -341,11 +341,16 @@ int* getShapeBroadcasting(Tensor a, Tensor b) {
 Tensor operator+(Tensor a, Tensor b) {
     if(checkShape(a, b)) {
         if(a.nDimensions == 1 && b.nDimensions == 1) {
-            float* results = (float *)malloc(a.totalVals * sizeof(float));
             if(a.device == "cuda" && b.device == "cuda") {
-                vector_addition(a.getValues(), b.getValues(), results, a.totalVals);
-                return Tensor(results, &(a.totalVals), 1, "cuda"); 
+                float* results;
+                cudaMalloc((void**)&results, a.getTotalValues() * sizeof(float));
+                cudaMemset(results, 0, a.getTotalValues() * sizeof(float));
+                vector_addition(a.valuesCuda, b.valuesCuda, results, a.totalVals);
+                float* host_values = (float *)malloc(a.getTotalValues() * sizeof(float));
+                cudaMemcpy(host_values, results, a.getTotalValues() * sizeof(float), cudaMemcpyDeviceToHost);
+                return Tensor(host_values, &(a.totalVals), 1, "cuda"); 
             } else {
+                float* results = (float *)malloc(a.totalVals * sizeof(float));
                 for(int i = 0; i < a.totalVals; i ++) {
                     results[i] = a.values[i] + b.values[i];
                 }
@@ -364,7 +369,33 @@ Tensor operator+(Tensor a, Tensor b) {
 
         // n Dimensional Matrix Addition:
         if(a.device == "cuda" && b.device == "cuda") {
-            return Tensor(resultValues, broadcastingShape, numDims);
+            int* resultingDims = new int[a.nDimensions];
+            for(int i = 0; i < a.nDimensions - 1; i++) {
+                resultingDims[i] = a.dimensions[i];
+            }
+            resultingDims[a.nDimensions - 1] = b.dimensions[b.nDimensions - 1];
+
+            int totalOutputVals = 1;
+            for (int i = 0; i < a.nDimensions; i++) {
+                totalOutputVals *= resultingDims[i];
+            }
+            float* outputValues = new float[totalOutputVals];
+            int n = a.dimensions[a.nDimensions - 2];
+            int m = a.dimensions[a.nDimensions - 1]; 
+            int batchSize = totalOutputVals / (n*m);
+            float* zeros_device;
+            cudaMalloc((void**)&zeros_device,batchSize * n * m * sizeof(float));
+            cudaMemset(zeros_device, 0, batchSize * m * n * sizeof(float));
+            for (int batch = 0; batch < batchSize; batch++) {
+                float* a_batch = a.valuesCuda + batch * (n * m);
+                float* b_batch = b.valuesCuda + batch * (n * m);
+                float* c_batch = zeros_device + batch * (m * n);
+                matrix_addition(a_batch, b_batch, c_batch, n, m);
+
+            }
+            float* host_values = (float *)malloc(m * n * batchSize * sizeof(float));
+            cudaMemcpy(host_values, zeros_device, m* n * batchSize  * sizeof(float), cudaMemcpyDeviceToHost);
+            return Tensor(host_values, resultingDims, a.nDimensions, "cuda");
         } else {
             for(int i = 0; i < totalValues; i++) {
                 int idxA = 0;
@@ -469,16 +500,16 @@ Tensor operator*(Tensor a, Tensor b) {
 
     if(a.nDimensions == 1 && b.nDimensions == 1) {
         if(a.device == "cuda" && b.device == "cuda") {
-            float* c_device;
-            cudaMalloc((void**)&c_device, sizeof(float));
-            dot_product(a.getValues(), b.getValues(), c_device, a.totalVals);
-            
-            
+            float* result = (float *)malloc(sizeof(float));
+            result[0] = 0;
+            for(int i = 0; i < a.totalVals; i ++) {
+                result[0] = result[0] + (a.getValues()[i] * b.getValues()[i]);
+                
+            }
             int* resultDims = new int[1];
             resultDims[0] = 1;
-            return Tensor(&c_device, resultDims, 1, "cuda"); 
+            return Tensor(result, resultDims, 1, "cuda");
 
-            
         } else {
             float* result = (float *)malloc(sizeof(float));
             for(int i = 0; i < a.totalVals; i ++) {
@@ -500,20 +531,25 @@ Tensor operator*(Tensor a, Tensor b) {
             totalOutputVals *= resultingDims[i];
         }
         float* outputValues = new float[totalOutputVals];
-        int n = totalOutputVals / (a.dimensions[a.nDimensions - 2] * b.dimensions[b.nDimensions - 1]);
+        int n = a.dimensions[a.nDimensions - 2];
         int m = a.dimensions[a.nDimensions - 1]; 
         int p = b.dimensions[b.nDimensions - 1];
-        int batchSize = totalOutputVals / (resultingDims[a.nDimensions - 2] * resultingDims[a.nDimensions - 1]);
+        int batchSize = totalOutputVals / (m*p);
         if(a.device == "cuda" && b.device == "cuda") {
-            float* c_device;
-            cudaMalloc((void**)&c_device, n * p * sizeof(float));
+            float* zeros_device;
+            cudaMalloc((void**)&zeros_device,batchSize * m * p * sizeof(float));
+            cudaMemset(zeros_device, 0, batchSize * m * p * sizeof(float));
+            //c_device[0] = 1;
             for (int batch = 0; batch < batchSize; batch++) {
-                float* a_batch = a.getValues() + batch * (a.dimensions[a.nDimensions - 2] * m);
-                float* b_batch = b.getValues() + batch * (b.dimensions[b.nDimensions - 2] * p);
-                float* c_batch = c_device + batch * (a.dimensions[a.nDimensions - 2] * p);
+                float* a_batch = a.valuesCuda + batch * (n * m);
+                float* b_batch = b.valuesCuda + batch * (n * p);
+                float* c_batch = zeros_device + batch * (m * p);
                 matrix_multiplication(a_batch, b_batch, c_batch, n, m, p);
+
             }
-            return Tensor(&c_device, resultingDims, a.nDimensions, "cuda");
+            float* host_values = (float *)malloc(m * p * batchSize * sizeof(float));
+            cudaMemcpy(host_values, zeros_device, m* p * batchSize  * sizeof(float), cudaMemcpyDeviceToHost);
+            return Tensor(host_values, resultingDims, a.nDimensions, "cuda");
         } else {
             for (int batch = 0; batch < batchSize; batch++) {
                 for (int i = 0; i < resultingDims[a.nDimensions - 2]; i++) {
@@ -530,8 +566,90 @@ Tensor operator*(Tensor a, Tensor b) {
                 }
             }
 
+            // Return resulting dims of multiplied tensor
             return Tensor(outputValues, resultingDims, a.nDimensions);
 
         }
     }
+}
+
+
+float mean(Tensor a) {
+    float* values = a.getValues();
+    float sum = 0;
+    for (int i = 0; i < a.getTotalValues(); i++) {
+        sum += values[i];
+    }
+    return sum / a.getTotalValues();
+}
+
+
+Tensor mean(Tensor a, int dim) {
+    float* values = a.getValues();
+    int* dims = a.getDimensions();
+    if (dim < 0) {
+        std::ostringstream msg;
+        msg << "Dimension cannot be less than 0.";
+        throw std::invalid_argument(msg.str());
+    }
+    if (dim == 0) {
+        float* valuesDimZero = new float[1];
+        valuesDimZero[0] = mean(a);
+        int* dims = new int[1];
+        dims[0] = 1;
+        Tensor result(valuesDimZero, dims, 1);
+        return result;
+    }
+
+    int* cleanedDims = new int[dim];
+    int divisionDimFactor = 1;
+    for (int i = 0; i < a.getNumDimensions(); i++) {
+        if (i < dim) {
+            cleanedDims[i] = dims[i];
+        } else {
+            divisionDimFactor *= dims[i];
+        }
+    }
+
+    float* means = new float[a.getTotalValues() / divisionDimFactor];
+
+    float temp = 0;
+    for (int i = 0; i < a.getTotalValues(); i++) {
+        temp += values[i];
+        if ((i+1) % divisionDimFactor == 0) {
+            means[((i+1)/divisionDimFactor) - 1] = temp / divisionDimFactor;
+            temp = 0;
+        }
+    }
+
+
+    Tensor result(means, cleanedDims, dim);
+    return result;
+}
+
+
+float standardDev(Tensor a) { 
+    float aMean = mean(a);
+    float* values = a.getValues();
+    float sumDeviances = 0;
+    for (int i = 0; i < a.getTotalValues(); i++) {
+        sumDeviances += abs(values[i] - aMean);
+    }
+    return sqrt(sumDeviances / a.getTotalValues());
+}
+
+
+Tensor standardize(Tensor a) {
+    float sdv = standardDev(a);
+    float mn = mean(a);
+    float* values = a.getValues();
+    float* resValues = new float[a.getTotalValues()];
+    a.getDimensions();
+    
+    for (int i = 0; i < a.getTotalValues(); i++) {
+        resValues[i] = (values[i] - mn) / sdv;
+    }
+
+    Tensor result(resValues, a.getDimensions(), a.getNumDimensions());
+    return result;
 }

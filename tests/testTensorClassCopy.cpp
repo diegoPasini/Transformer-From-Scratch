@@ -258,6 +258,90 @@ int main() {
     // cout << "Element at index t1: " << value << endl;
 
     
+    // Mean testing
+    float* meanTestValues = new float[4];
+    meanTestValues[0] = 1;
+    meanTestValues[1] = 2;
+    meanTestValues[2] = 3;
+    meanTestValues[3] = 4;
+    int* meanTestDims = new int[1];
+    meanTestDims[0] = 4;
+    Tensor meanTestTensor(meanTestValues, meanTestDims, 1);
+
+    float result = mean(meanTestTensor);
+    cout << "bruh" << endl;
+    cout << result << endl;
+    cout << "bru" << endl;
+
+
+
+    float* meanTestValues2 = new float[4];
+    meanTestValues2[0] = 1;
+    meanTestValues2[1] = 2;
+    meanTestValues2[2] = 3;
+    meanTestValues2[3] = 4;
+    int* meanTestDims2 = new int[2];
+    meanTestDims2[0] = 2;
+    meanTestDims2[1] = 2;
+    Tensor meanTestTensor2(meanTestValues2, meanTestDims2, 2);
+
+    Tensor result2 = mean(meanTestTensor2, 1);
+    cout << "bruh" << endl;
+    cout << result2.toString() << endl;
+    cout << "bru" << endl;
+
+
+    float* meanTestValues3 = new float[4];
+    meanTestValues3[0] = 1;
+    meanTestValues3[1] = 2;
+    meanTestValues3[2] = 3;
+    meanTestValues3[3] = 4;
+    meanTestValues3[4] = 5;
+    meanTestValues3[5] = 6;
+    meanTestValues3[6] = 7;
+    meanTestValues3[7] = 8;
+    int* meanTestDims3 = new int[3];
+    meanTestDims3[0] = 2;
+    meanTestDims3[1] = 2;
+    meanTestDims3[2] = 2;
+    Tensor meanTestTensor3(meanTestValues3, meanTestDims3, 3);
+
+    Tensor result3 = mean(meanTestTensor3, 3);
+    cout << "bruh" << endl;
+    cout << result3.toString() << endl;
+    cout << "bru" << endl;
+
+
+    float* meanTestValues4 = new float[4];
+    meanTestValues4[0] = 1;
+    meanTestValues4[1] = 2;
+    meanTestValues4[2] = 3;
+    meanTestValues4[3] = 4;
+    int* meanTestDims4 = new int[1];
+    meanTestDims4[0] = 4;
+    Tensor meanTestTensor4(meanTestValues4, meanTestDims4, 1);
+
+    float res4 = standardDev(meanTestTensor4);
+    cout << "adfjasdl;fjdsl;fksaj" << endl;
+    cout << res4 << endl;
+    cout << "asdfjl;adskjfas;lkfjs" << endl;
+
+
+
+
+    float* meanTestValues5 = new float[4];
+    meanTestValues5[0] = 1;
+    meanTestValues5[1] = 6;
+    meanTestValues5[2] = 7;
+    meanTestValues5[3] = 12;
+    int* meanTestDims5 = new int[1];
+    meanTestDims5[0] = 4;
+    Tensor meanTestTensor5(meanTestValues5, meanTestDims5, 1);
+
+    Tensor res5 = standardize(meanTestTensor5);
+    cout << "adfjasdl;fjdsl;fksaj" << endl;
+    cout << res5.toString() << endl;
+    cout << "asdfjl;adskjfas;lkfjs" << endl;
 
 
     // CUDA Testing

@@ -32,27 +32,23 @@ __global__ void scaleMatrix(float* a, float* b, float scalar, int n, int m){
     }
 }
 
-// Dot Product For 1 Dimensions Arrays:
-__global__ void dotProduct(float* a, float* b, float* c, int n){
-	int i = threadIdx.x;
-	if(i < n) {
-		c[0] = c[0] + a[i] * b[i];
-	}
-}
 
 
 // Matrix Multiplication
 // Try Strassen Algorithm????
-__global__ void multiplyMatrices(float* a, float* b, float* c, int n, int m, int p){
-	int i = blockIdx.x * blockDim.x + threadIdx.x;
-	int j = blockIdx.y * blockDim.y + threadIdx.y;
-	float temp = 0.0f;
-	if (j < m && i < p) {
-        for(int k = 0; k < n; k++) {
-			temp += a[j * n + k] * b[k * p + i];
-		}
-		c[j * p + i] = temp;
-    }
+
+__global__ void multiplyMatrices(float *d_A, float *d_B, float *d_C, int M, int N, int P) {
+        int row = blockIdx.y * blockDim.y + threadIdx.y;
+        int col = blockIdx.x * blockDim.x + threadIdx.x;
+        if(row < M && col < P) {
+                float sum = 0.0f;
+
+                // compute the dot product for each row of A and col of B
+                for(int i = 0; i < N; ++i) {
+                        sum += d_A[row * N + i] * d_B[i * P + col];
+                }
+                d_C[row * P + col] = sum;
+        }
 }
 
 
@@ -77,15 +73,10 @@ namespace MatrixOperations {
 
 	}
 
-	void dot_product(float* a, float *b, float* c, int n){
-		addVectors<<<1, n>>>(a, b, c, n);
-		cudaDeviceSynchronize();
-	}
-
-	void matrix_multiplication(float* a, float* b, float* c, int n, int m, int p) {
+	void matrix_multiplication(float* a, float *b, float* c, int n, int m, int p){
 		dim3 blockSize(16, 16);
 		dim3 gridDim((p+blockSize.x - 1)/blockSize.x, (m + blockSize.y-1)/blockSize.y);
-		multiplyMatrices<<<gridDim, blockSize>>>(a, b, c, n, m, p);
+		multiplyMatrices<<<gridDim, blockSize>>>(a, b, c, m, n, p);
 		cudaDeviceSynchronize();
 	}
 

@@ -65,6 +65,19 @@ class Tensor {
         // // Get Broadcastable Shape
         friend int* getShapeBroadcasting(Tensor a, Tensor b);
 
+
+        // Get mean
+        friend float mean(Tensor a);
+
+        // Get mean with dimension
+        friend Tensor mean(Tensor a, int dim);
+
+        // Get mean
+        friend float standardDev(Tensor a);
+
+        // Standardize, treated as 1D
+        friend Tensor standardize(Tensor a);
+
     private:
         float* values;     // Pointer to the tensor's values
         int totalVals;     // Total number of values

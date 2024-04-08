@@ -3,85 +3,38 @@
 #include <iostream>
 #include <string>
 #include <sstream> 
+#include <vector>
+#include <numeric>
+
 
 using namespace std;
 using namespace MatrixOperations;
 
 // Full Tensor Constructor
-Tensor::Tensor(float* vals, int* dims, int numDims, string dev) {
-    dimensions = (int *)malloc(numDims*sizeof(int));
-    int totalVals = 1;
-    for(int i = 0; i < numDims; i++) {
-        totalVals = totalVals * dims[i];
-        dimensions[i] = dims[i];
-    }
-    this->totalVals = totalVals;
-    this->nDimensions = numDims;
-    this->values = (float *)malloc(totalVals*sizeof(float));
-    for(int j = 0; j < totalVals; j++) {
-        values[j] = vals[j];
-    }
-
-    if(dev.compare("cuda") == 0){
-        this->device = dev;
-        cudaMalloc(&valuesCuda, totalVals*sizeof(float));
-        cudaMemcpy(valuesCuda, values, totalVals*sizeof(float), cudaMemcpyHostToDevice);
+Tensor::Tensor(const vector<float>& vals, const vector<int>& dims, string dev) 
+    : dimensions(dims), totalVals(vals.size()), nDimensions(dims.size()), device(dev), values(vals) {
+    if("cuda" == dev){
+        int size2 = totalVals*sizeof(float);
+        cudaMalloc(&valuesCuda, size2);
+        cudaMemcpy(valuesCuda, vals.data(), size2, cudaMemcpyHostToDevice);
     }
 }
 
-
 // Copy Constructor
-Tensor::Tensor(const Tensor& other) {
-    this->totalVals = other.totalVals;
-    this->nDimensions = other.nDimensions;
-    this->device = other.device;
-
-    this->dimensions = (int *)malloc(nDimensions * sizeof(int));
-    for(int i = 0; i < nDimensions; i++) {
-        this->dimensions[i] = other.dimensions[i];
-    }
-
-    this->values = (float *)malloc(totalVals * sizeof(float));
-    for(int i = 0; i < totalVals; i++) {
-        this->values[i] = other.values[i];
-    }
-
+Tensor::Tensor(const Tensor& other) 
+    : totalVals(other.totalVals), nDimensions(other.nDimensions), device(other.device), dimensions(other.dimensions), values(other.values) {
     if (device.compare("cuda") == 0) {
         cudaMalloc(&valuesCuda, totalVals * sizeof(float));
         cudaMemcpy(valuesCuda, other.valuesCuda, totalVals * sizeof(float), cudaMemcpyDeviceToDevice);
-    }
+    }   
 }
-
-
-// Cuda Memory Reference constructor:
-Tensor::Tensor(float** c_device, int* dims, int numDims, string dev){
-    dimensions = (int *)malloc(numDims * sizeof(int));
-    int totalVals = 1;
-    for(int i = 0; i < numDims; i++) {
-        totalVals *= dims[i];
-        dimensions[i] = dims[i];
-    }
-    this->totalVals = totalVals;
-    this->nDimensions = numDims;
-    this->device = dev;
-    
-    if (dev == "cuda") {
-        valuesCuda = *c_device;
-    } else {
-        std::cerr << "Error: Non-CUDA device specified for CUDA memory constructor." << std::endl;
-    }
-}
-
 
 // Destructor
 Tensor::~Tensor() {
-    free(dimensions);
-    free(values);
     if (device.compare("cuda") == 0) {
-        cudaFree(valuesCuda);
+        cudaFree(this->valuesCuda);
     }
 }
-
 
 // Assignment Operator
 Tensor& Tensor::operator=(const Tensor& other) {
@@ -89,25 +42,15 @@ Tensor& Tensor::operator=(const Tensor& other) {
         return *this;
     }
 
-    free(dimensions);
-    free(values);
     if (device.compare("cuda") == 0) {
         cudaFree(valuesCuda);
     }
 
-    this->totalVals = other.totalVals;
-    this->nDimensions = other.nDimensions;
-    this->device = other.device;
-
-    this->dimensions = (int *)malloc(nDimensions * sizeof(int));
-    for(int i = 0; i < nDimensions; i++) {
-        this->dimensions[i] = other.dimensions[i];
-    }
-
-    this->values = (float *)malloc(totalVals * sizeof(float));
-    for(int i = 0; i < totalVals; i++) {
-        this->values[i] = other.values[i];
-    }
+    totalVals = other.totalVals;
+    nDimensions = other.nDimensions;
+    device = other.device;
+    dimensions = other.dimensions;
+    values = other.values;
 
     if (device.compare("cuda") == 0) {
         cudaMalloc(&valuesCuda, totalVals * sizeof(float));
@@ -117,98 +60,75 @@ Tensor& Tensor::operator=(const Tensor& other) {
     return *this;
 }
 
-
 // Equality Operator
 bool Tensor::operator==(const Tensor& other) {
     if (this == &other) {
         return true;
     }
-    if (this->totalVals != other.totalVals || this->nDimensions != other.nDimensions || this->device != other.device) {
+    if (totalVals != other.totalVals || nDimensions != other.nDimensions || device != other.device) {
         return false;
     }
-    for (int i = 0; i < this->nDimensions; i++) {
-        if (this->dimensions[i] != other.dimensions[i]) {
-            return false;
-        }
+    if (dimensions != other.dimensions) {
+        return false;
     }
-    for (int i = 0; i < this->totalVals; i++) {
-        if (this->values[i] != other.values[i]) {
-            return false;
-        }
+    if (values != other.values) {
+        return false;
     }
-    if (this->device.compare("cuda") == 0 && other.device.compare("cuda") == 0) {
-        float* valuesCudaCopy = (float *)malloc(totalVals * sizeof(float));
-        cudaMemcpy(valuesCudaCopy, other.valuesCuda, totalVals * sizeof(float), cudaMemcpyDeviceToHost);
-
-        for (int i = 0; i < this->totalVals; i++) {
-            if (this->valuesCuda[i] != valuesCudaCopy[i]) {
-                free(valuesCudaCopy);
-                return false;
+    if ("cuda" == device && other.device == "cuda"){
+        vector<float> valuesCudaCopy(totalVals);
+        cudaMemcpy(valuesCudaCopy.data(), other.valuesCuda, other.totalVals * sizeof(float), cudaMemcpyDeviceToHost);
+        cudaMemcpy(values.data(), valuesCuda, totalVals * sizeof(float), cudaMemcpyDeviceToHost);
+        for (int i = 0; i < totalVals; i++) {
+            if (valuesCuda[i] != valuesCudaCopy[i]) {
+            return false;
             }
-        }   
-          free(valuesCudaCopy);
+        }
     }
     return true;
 }
 
 // reshape function
-void Tensor::reshape(int* newDims, int newNumDims) {
-    int totalNewVals = 1;
-    for(int i = 0; i < newNumDims; i++) {
-        totalNewVals *= newDims[i];
-    }
+void Tensor::reshape(const vector<int>& newDims) {
+    int totalNewVals = accumulate(newDims.begin(), newDims.end(), 1, std::multiplies<int>());
     
-    if(totalNewVals != this->totalVals) {
+    if(totalNewVals != totalVals) {
         throw std::invalid_argument("New dimensions do not match total number of elements.");
     }
 
-    free(this->dimensions);
-    this->dimensions = (int *)malloc(newNumDims * sizeof(int));
-    for(int i = 0; i < newNumDims; i++) {
-        this->dimensions[i] = newDims[i];
-    }
-    this->nDimensions = newNumDims;
+    dimensions = newDims;
+    nDimensions = newDims.size();
 }
 
-
 // Accessor functions
-int Tensor::getTotalValues() {
+int Tensor::getTotalValues() const {
     return totalVals;
 }
 
-int Tensor::getNumDimensions() {
+int Tensor::getNumDimensions() const {
     return nDimensions;
 }
 
-int* Tensor::getDimensions() {
-    int* dimensionsCopy = (int *)malloc(nDimensions * sizeof(int));
-    for(int i = 0; i < nDimensions; i++) {
-        dimensionsCopy[i] = dimensions[i];
-    }
-    return dimensionsCopy;
+vector<int> Tensor::getDimensions() const{
+    return dimensions;
 }
 
-string Tensor::getDevice() {
+string Tensor::getDevice() const {
     return device;
 }
 
-// Get Values - Returns CUDA values if enabled
-float* Tensor::getValues() {
-    float* valuesCopy = (float *)malloc(totalVals * sizeof(float));
-    if (device.compare("cuda") != 0) {
-        for(int i = 0; i < totalVals; i++) {
-            valuesCopy[i] = values[i];
-        }
+vector<float> Tensor::getValues() const{
+    if (device == "cuda") {
+        vector<float> hostValues(totalVals);
+        cudaMemcpy(hostValues.data(), valuesCuda, totalVals * sizeof(float), cudaMemcpyDeviceToHost);
+        return hostValues; 
     } else {
-        cudaMemcpy(valuesCopy, valuesCuda, totalVals * sizeof(float), cudaMemcpyDeviceToHost);
+        return values;
     }
-    return valuesCopy;
 }
-
 
 //Operator Overloading
 // Indexing Method
-float Tensor::operator[](int* indices) {
+float Tensor::operator[](const vector<int>& indices) const {
     int calculatedIndex = 0;
     for (int i = 0; i < nDimensions; i++) {
         if (indices[i] < 0 || indices[i] >= dimensions[i]) {
@@ -224,9 +144,8 @@ float Tensor::operator[](int* indices) {
     return values[calculatedIndex];
 }
 
-
 // String for Dimensions 
-string Tensor::getDimensionsString() {
+string Tensor::getDimensionsString() const {
     string dimensionsString = "(";
     for (int i = 0; i < nDimensions; i++) {
         dimensionsString += to_string(dimensions[i]);
@@ -239,7 +158,7 @@ string Tensor::getDimensionsString() {
 }
 
 // toString function
-string Tensor::toString() {
+string Tensor::toString() const {
     ostringstream oss;
     if (nDimensions == 1) {
         oss << "[";
@@ -282,7 +201,6 @@ string Tensor::toString() {
     }
     return oss.str();
 }
-
 // Function to check if two tensors are broadcastable
 // Check numpy documentation for more info --> https://numpy.org/doc/stable/user/basics.broadcasting.html
 bool broadcastable(Tensor a, Tensor b) {
@@ -313,8 +231,8 @@ bool checkShape(Tensor a, Tensor b){
 
 
 // Return the broadcasting shape for the new array
-int* getShapeBroadcasting(Tensor a, Tensor b) {
-    int* dimensionsArray = (int *)malloc(max(a.nDimensions, b.nDimensions) * sizeof(int));
+vector<int> getShapeBroadcasting(Tensor a, Tensor b){
+    vector<int> dimensionsArray(max(a.nDimensions, b.nDimensions));
     for(int i = 0; i < max(a.nDimensions, b.nDimensions); i++) {
         if (i < a.nDimensions && i < b.nDimensions) {
             if (a.dimensions[i] == b.dimensions[i]) {
@@ -346,45 +264,40 @@ Tensor operator+(Tensor a, Tensor b) {
                 cudaMalloc((void**)&results, a.getTotalValues() * sizeof(float));
                 cudaMemset(results, 0, a.getTotalValues() * sizeof(float));
                 vector_addition(a.valuesCuda, b.valuesCuda, results, a.totalVals);
-                float* host_values = (float *)malloc(a.getTotalValues() * sizeof(float));
-                cudaMemcpy(host_values, results, a.getTotalValues() * sizeof(float), cudaMemcpyDeviceToHost);
-                return Tensor(host_values, &(a.totalVals), 1, "cuda"); 
+                vector<float> host_values(a.getTotalValues());
+                cudaMemcpy(host_values.data(), results, a.getTotalValues() * sizeof(float), cudaMemcpyDeviceToHost);
+                vector<int> dims = {a.getTotalValues()};
+                return Tensor(host_values, dims, string("cuda")); 
             } else {
-                float* results = (float *)malloc(a.totalVals * sizeof(float));
+                vector<float> results(a.totalVals);
                 for(int i = 0; i < a.totalVals; i ++) {
                     results[i] = a.values[i] + b.values[i];
                 }
-                return Tensor(results, &(a.totalVals), 1);
+                vector<int> dims = {a.getTotalValues()};
+                return Tensor(results, dims);
             }
         }
 
-        int* broadcastingShape = getShapeBroadcasting(a, b);
+        vector<int> broadcastingShape = getShapeBroadcasting(a, b);
         int numDims = max(a.nDimensions, b.nDimensions);
-        int totalValues = 1;
-        for (int i = 0; i < numDims; i++) {
-            totalValues *= broadcastingShape[i];
-        }
+        int totalValues = broadcastingShape.size();
 
-        float* resultValues = (float *)malloc(totalValues * sizeof(float));
+        vector<float> resultValues(totalValues);
 
         // n Dimensional Matrix Addition:
         if(a.device == "cuda" && b.device == "cuda") {
-            int* resultingDims = new int[a.nDimensions];
-            for(int i = 0; i < a.nDimensions - 1; i++) {
-                resultingDims[i] = a.dimensions[i];
-            }
+            vector<int> resultingDims = a.dimensions;
             resultingDims[a.nDimensions - 1] = b.dimensions[b.nDimensions - 1];
-
             int totalOutputVals = 1;
             for (int i = 0; i < a.nDimensions; i++) {
                 totalOutputVals *= resultingDims[i];
             }
-            float* outputValues = new float[totalOutputVals];
+            vector<float> outputValues(totalOutputVals);
             int n = a.dimensions[a.nDimensions - 2];
             int m = a.dimensions[a.nDimensions - 1]; 
             int batchSize = totalOutputVals / (n*m);
             float* zeros_device;
-            cudaMalloc((void**)&zeros_device,batchSize * n * m * sizeof(float));
+            cudaMalloc((void**)&zeros_device, batchSize * n * m * sizeof(float));
             cudaMemset(zeros_device, 0, batchSize * m * n * sizeof(float));
             for (int batch = 0; batch < batchSize; batch++) {
                 float* a_batch = a.valuesCuda + batch * (n * m);
@@ -393,9 +306,9 @@ Tensor operator+(Tensor a, Tensor b) {
                 matrix_addition(a_batch, b_batch, c_batch, n, m);
 
             }
-            float* host_values = (float *)malloc(m * n * batchSize * sizeof(float));
-            cudaMemcpy(host_values, zeros_device, m* n * batchSize  * sizeof(float), cudaMemcpyDeviceToHost);
-            return Tensor(host_values, resultingDims, a.nDimensions, "cuda");
+            vector<float> host_values(m * n * batchSize);
+            cudaMemcpy(host_values.data(), zeros_device, m* n * batchSize  * sizeof(float), cudaMemcpyDeviceToHost);
+            return Tensor(host_values, resultingDims, string("cuda"));
         } else {
             for(int i = 0; i < totalValues; i++) {
                 int idxA = 0;
@@ -419,15 +332,14 @@ Tensor operator+(Tensor a, Tensor b) {
                 }
                 resultValues[i] = a.values[idxA] + b.values[idxB];
             }
-            return Tensor(resultValues, broadcastingShape, numDims);
+            return Tensor(resultValues, broadcastingShape);
         }
-
     } else {
-        int* shapeBroadcast = getShapeBroadcasting(a, b);
+        vector<int> shapeBroadcast = getShapeBroadcasting(a, b);
         int maxDim = max(a.nDimensions, b.nDimensions);
         int minDim = min(a.nDimensions, b.nDimensions);
-        float* a_vals = a.getValues();
-        float* b_vals = b.getValues();
+        vector<float> a_vals = a.getValues();
+        vector<float> b_vals = b.getValues();
         int a_sizeFactor = 1;
         int b_sizeFactor = 1;
 
@@ -455,8 +367,8 @@ Tensor operator+(Tensor a, Tensor b) {
             }
         }
         
-        float* a_result = new float[a_sizeFactor * a.totalVals];
-        float* b_result = new float[b_sizeFactor * b.totalVals];
+        vector<float> a_result(a_sizeFactor * a.totalVals);
+        vector<float> b_result(b_sizeFactor * b.totalVals);
         
         for (int i = 0; i < a_sizeFactor; i++) {
             for (int j = 0; j < a.totalVals; j++) {
@@ -470,8 +382,8 @@ Tensor operator+(Tensor a, Tensor b) {
             }
         }
 
-        Tensor a_tensor = Tensor(a_result, shapeBroadcast, maxDim);
-        Tensor b_tensor = Tensor(b_result, shapeBroadcast, maxDim);
+        Tensor a_tensor = Tensor(a_result, shapeBroadcast);
+        Tensor b_tensor = Tensor(b_result, shapeBroadcast);
         return a_tensor + b_tensor;
     }
 }
@@ -500,37 +412,33 @@ Tensor operator*(Tensor a, Tensor b) {
 
     if(a.nDimensions == 1 && b.nDimensions == 1) {
         if(a.device == "cuda" && b.device == "cuda") {
-            float* result = (float *)malloc(sizeof(float));
+            vector<float> result(1);
             result[0] = 0;
             for(int i = 0; i < a.totalVals; i ++) {
                 result[0] = result[0] + (a.getValues()[i] * b.getValues()[i]);
                 
             }
-            int* resultDims = new int[1];
-            resultDims[0] = 1;
-            return Tensor(result, resultDims, 1, "cuda");
+            vector<int> resultDims = {1};
+            return Tensor(result, resultDims, string("cuda"));
 
         } else {
-            float* result = (float *)malloc(sizeof(float));
+            vector<float> result(1);
+            result[0] = 0;
             for(int i = 0; i < a.totalVals; i ++) {
-                result[0] = result[0] + (a.values[i] * b.values[i]);
+                result[0] = result[0] + (a.getValues()[i] * b.getValues()[i]);
+                
             }
-            int* resultDims = new int[1];
-            resultDims[0] = 1;
-            return Tensor(result, resultDims, 1);
+            vector<int> resultDims = {1};
+            return Tensor(result, resultDims);
         }
     } else {
-        int* resultingDims = new int[a.nDimensions];
-        for(int i = 0; i < a.nDimensions - 1; i++) {
-            resultingDims[i] = a.dimensions[i];
-        }
+        vector<int> resultingDims = a.dimensions;
         resultingDims[a.nDimensions - 1] = b.dimensions[b.nDimensions - 1];
-
         int totalOutputVals = 1;
         for (int i = 0; i < a.nDimensions; i++) {
             totalOutputVals *= resultingDims[i];
         }
-        float* outputValues = new float[totalOutputVals];
+        vector<float> outputValues(totalOutputVals);
         int n = a.dimensions[a.nDimensions - 2];
         int m = a.dimensions[a.nDimensions - 1]; 
         int p = b.dimensions[b.nDimensions - 1];
@@ -549,7 +457,8 @@ Tensor operator*(Tensor a, Tensor b) {
             }
             //float* host_values = (float *)malloc(m * p * batchSize * sizeof(float));
             //cudaMemcpy(host_values, zeros_device, m* p * batchSize  * sizeof(float), cudaMemcpyDeviceToHost);
-            return Tensor(&zeros_device, resultingDims, a.nDimensions, "cuda");
+            return Tensor(outputValues, resultingDims, string("cuda"));
+            //return ;
         } else {
             for (int batch = 0; batch < batchSize; batch++) {
                 for (int i = 0; i < resultingDims[a.nDimensions - 2]; i++) {
@@ -567,7 +476,7 @@ Tensor operator*(Tensor a, Tensor b) {
             }
 
             // Return resulting dims of multiplied tensor
-            return Tensor(outputValues, resultingDims, a.nDimensions);
+            return Tensor(outputValues, resultingDims);
 
         }
     }
@@ -575,7 +484,7 @@ Tensor operator*(Tensor a, Tensor b) {
 
 
 float mean(Tensor a) {
-    float* values = a.getValues();
+    vector<float> values = a.getValues();
     float sum = 0;
     for (int i = 0; i < a.getTotalValues(); i++) {
         sum += values[i];
@@ -585,23 +494,22 @@ float mean(Tensor a) {
 
 
 Tensor mean(Tensor a, int dim) {
-    float* values = a.getValues();
-    int* dims = a.getDimensions();
+    vector<float> values = a.getValues();
+    vector<int> dims = a.getDimensions();
     if (dim < 0) {
         std::ostringstream msg;
         msg << "Dimension cannot be less than 0.";
         throw std::invalid_argument(msg.str());
     }
     if (dim == 0) {
-        float* valuesDimZero = new float[1];
+        vector<float> valuesDimZero(1);
         valuesDimZero[0] = mean(a);
-        int* dims = new int[1];
-        dims[0] = 1;
-        Tensor result(valuesDimZero, dims, 1);
+        vector<int> dims = {1};
+        Tensor result(valuesDimZero, dims);
         return result;
     }
 
-    int* cleanedDims = new int[dim];
+    vector<int> cleanedDims(dim);
     int divisionDimFactor = 1;
     for (int i = 0; i < a.getNumDimensions(); i++) {
         if (i < dim) {
@@ -611,7 +519,7 @@ Tensor mean(Tensor a, int dim) {
         }
     }
 
-    float* means = new float[a.getTotalValues() / divisionDimFactor];
+    vector<float> means(a.getTotalValues() / divisionDimFactor);
 
     float temp = 0;
     for (int i = 0; i < a.getTotalValues(); i++) {
@@ -623,14 +531,14 @@ Tensor mean(Tensor a, int dim) {
     }
 
 
-    Tensor result(means, cleanedDims, dim);
+    Tensor result(means, cleanedDims);
     return result;
 }
 
 
 float standardDev(Tensor a) { 
     float aMean = mean(a);
-    float* values = a.getValues();
+    vector<float> values = a.getValues();
     float sumDeviances = 0;
     for (int i = 0; i < a.getTotalValues(); i++) {
         sumDeviances += abs(values[i] - aMean);
@@ -639,17 +547,42 @@ float standardDev(Tensor a) {
 }
 
 
-Tensor standardize(Tensor a) {
-    float sdv = standardDev(a);
-    float mn = mean(a);
-    float* values = a.getValues();
-    float* resValues = new float[a.getTotalValues()];
-    a.getDimensions();
+// Tensor standardize(Tensor a) {
+//     float sdv = standardDev(a);
+//     float mn = mean(a);
+//     vector<float> values = a.getValues();
+//     vector<float> resValues(a.getTotalValues());
     
-    for (int i = 0; i < a.getTotalValues(); i++) {
-        resValues[i] = (values[i] - mn) / sdv;
-    }
+//     for (int i = 0; i < a.getTotalValues(); i++) {
+//         resValues[i] = (values[i] - mn) / sdv;
+//     }
+//     vector<int> resDimensions = {1};
+//     return Tensor result(resValues, resDimensions);
+// }
 
-    Tensor result(resValues, a.getDimensions(), a.getNumDimensions());
-    return result;
-}
+// Tensor softmax(Tensor a) { // IN PROGRESS
+//     if (a.getNumDimensions() != 1) {
+//         std::ostringstream msg;
+//         msg << "Softmax cannot be applied to a tensor with zero dimensions or with more than 1 dimension.";
+//         throw std::invalid_argument(msg.str());
+//     }
+
+//     if(a.getDevice() == "cuda") {
+//         float* values;
+//         float numValues;
+//         cudaMalloc(&values, sizeof(a.getValues));
+//         cudaMalloc(&values, a.getValues(), sizeof(a.getValues()), cudaMemcpyHostToDevice);
+        
+//     } else {
+//         float denominator = 0;
+//         float* values = a.getValues();
+//         float* softmaxValues = new float[a.getTotalValues()];
+//         for (int i = 0; i < a.getTotalValues(); i++) {
+//             denominator += exp(values[i]);
+//         }
+//         for (int i = 0; i < a.getTotalValues(); i++) {
+//             softmaxValues[i] = exp(values[i]) / denominator;
+//         }
+//         return Tensor(softmaxValues, a.getDimensions(), 1);
+//     }
+// }

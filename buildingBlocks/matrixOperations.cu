@@ -17,7 +17,6 @@ __global__ void addVectors(float* a, float* b, float *c, int size){
 __global__ void addMatrices(float* a, float *b, float *c, int n, int m){
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
-
     if (j < m && i < n) {
         c[i * n + j]= a[i * n + j] + b[i * n + j];
     }
@@ -52,6 +51,16 @@ __global__ void multiplyMatrices(float *d_A, float *d_B, float *d_C, int M, int 
 }
 
 
+// Sum of elements in matrix
+__global__ void sumMatrix(float* a, float aSum, int M, int N){
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	if (row < M && col < N) {
+		aSum += a[row * N + col];
+	}
+}
+
+
 namespace MatrixOperations {
 	void vector_addition(float* a, float* b, float* c, int n){		
 		addVectors<<<1, n>>>(a, b, c, n);
@@ -74,7 +83,7 @@ namespace MatrixOperations {
 	}
 
 	void matrix_multiplication(float* a, float *b, float* c, int n, int m, int p){
-		dim3 blockSize(16, 16);
+		dim3 blockSize(64, 64);
 		dim3 gridDim((p+blockSize.x - 1)/blockSize.x, (m + blockSize.y-1)/blockSize.y);
 		multiplyMatrices<<<gridDim, blockSize>>>(a, b, c, m, n, p);
 		cudaDeviceSynchronize();

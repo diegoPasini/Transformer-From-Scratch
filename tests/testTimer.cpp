@@ -14,11 +14,11 @@ int main() {
     dims4[0] = 10000;
     dims4[1] = 10000;
 
-    Tensor t1(values4, dims4, 2, "cuda");
+    Tensor t1(values4, dims4 "cuda");
     Tensor t2 = t1;
 
     t.start();
-    Tensor t3 = t2 + t1;
+    Tensor t3 = t2 * t1;
     t.stop();
     t.printLastTime();
     return 0;

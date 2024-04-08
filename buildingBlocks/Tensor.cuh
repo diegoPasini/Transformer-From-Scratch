@@ -2,15 +2,17 @@
 #define TENSOR_CUH_
 
 #include <string>
+#include <vector>
 using namespace std;
 
 
 class Tensor {
     public:
         // Constructor: Initializes a tensor with given values, dimensions, and optionally specifies the device
-        Tensor(float* vals, int* dims, int numDims, string dev = "");
-
+        Tensor(const vector<float>& vals, const vector<int>& dims, string dev = "");
+        
         Tensor(float** c_device, int* dims, int numDims, string dev = "");
+
 
         // Destructor: Responsible for freeing allocated resources
         ~Tensor();
@@ -25,18 +27,19 @@ class Tensor {
         bool operator==(const Tensor& other);
 
         // Accessor functions
-        int getTotalValues();
-        int getNumDimensions();
-        int* getDimensions();
-        string getDevice();
-        float* getValues();
+        int getTotalValues() const;
+        int getNumDimensions() const;
+        vector<int> getDimensions() const;
+        string getDevice() const;
+        vector<float> getValues() const;
+        
 
         // Operation to reshape the tensor
-        void reshape(int* newDims, int newNumDims);
+        void reshape(const vector<int>& newDims);
 
         
         // Indexing Operator
-        float operator[](int* indices);
+        float operator[](const vector<int>& indices) const;
 
         // Matrix Addition
         friend Tensor operator+(Tensor a, Tensor b);
@@ -50,10 +53,10 @@ class Tensor {
 
 
         // toString Dimensions
-        string getDimensionsString();
+        string getDimensionsString() const;
 
         // toString function
-        string toString();
+        string toString() const;
 
         // TO - DO: FINISH BROADCASTABLE IMPLEMENTATION:
         // // Checks if two tensors are broadcastable
@@ -63,7 +66,7 @@ class Tensor {
         friend bool checkShape(Tensor a, Tensor b);
 
         // // Get Broadcastable Shape
-        friend int* getShapeBroadcasting(Tensor a, Tensor b);
+        friend vector<int> getShapeBroadcasting(Tensor a, Tensor b);
 
 
         // Get mean
@@ -76,13 +79,13 @@ class Tensor {
         friend float standardDev(Tensor a);
 
         // Standardize, treated as 1D
-        friend Tensor standardize(Tensor a);
+        //friend Tensor standardize(Tensor a);
 
     private:
-        float* values;     // Pointer to the tensor's values
+        vector<float> values;     // Pointer to the tensor's values
         int totalVals;     // Total number of values
         float* valuesCuda; // Pointer to the tensor's values on CUDA device
-        int* dimensions;   // Pointer to the tensor's dimensions
+        vector<int> dimensions;   // Pointer to the tensor's dimensions
         int nDimensions;   // Number of dimensions
         string device = ""; // The computing device, e.g., "cuda" for CUDA devices
 };

@@ -1,28 +1,32 @@
 import torch
 import time
 
-# Without CUDA
-start_time = torch.cuda.Event(enable_timing=True)
-end_time = torch.cuda.Event(enable_timing=True)
+def benchmark_matrix_operations():
+    # Start measuring time
+    start_time = time.time()
 
-start_cpu = time.time()
-matrix_cpu = torch.randn(10_000, 10_000)
-copy_matrix_cpu = matrix_cpu.clone()
-result_cpu = torch.matmul(matrix_cpu, copy_matrix_cpu)
-end_cpu = time.time()
-cpu_time = end_cpu - start_cpu
+    # Create a 10,000 x 10,000 matrix with values equal to their index
+    # The index for each value is calculated as the row index times the number of columns plus the column index
+    nrows, ncols = 10000, 10000
+    
+    matrix = torch.arange(nrows * ncols, device="cuda").float().reshape((nrows, ncols))
 
-# With CUDA
-if torch.cuda.is_available():
-    start_time.record()
-    matrix_cuda = torch.randn(10_000, 10_000, device='cuda')
-    copy_matrix_cuda = matrix_cuda.clone()
-    result_cuda = matrix_cuda @ copy_matrix_cuda
-    end_time.record()
-    # Waits for everything to finish running
-    torch.cuda.synchronize()
-    cuda_time = start_time.elapsed_time(end_time) / 1000  # Convert milliseconds to seconds
-else:
-    cuda_time = None
+    # Time after creation
+    creation_time = time.time() - start_time
+    print(f"Matrix creation time: {creation_time:.5f} seconds.")
 
-print(cpu_time, cuda_time)
+    # Copy the matrix
+    start_time = time.time()
+    matrix_copy = matrix.clone()
+    copy_time = time.time() - start_time
+    print(f"Matrix copying time: {copy_time:.5f} seconds.")
+
+    # Multiply the matrix by 2
+    start_time = time.time()
+    matrix_multiplied = matrix.matmul(matrix)
+    multiplication_time = time.time() - start_time
+    print(f"Matrix multiplication time: {multiplication_time:.5f} seconds.")
+
+    return creation_time, copy_time, multiplication_time
+
+benchmark_matrix_operations()

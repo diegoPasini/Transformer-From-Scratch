@@ -20,6 +20,14 @@ Tensor::Tensor(const vector<float>& vals, const vector<int>& dims, string dev)
     }
 }
 
+Tensor::Tensor(float* c_device, const vector<int>& dims, string dev)
+    : dimensions(dims), totalVals(accumulate(dims.begin(), dims.end(), 1, multiplies<int>())), nDimensions(dims.size()), device(dev), valuesCuda(c_device) {
+    if (dev.compare("cuda") != 0) {
+        throw runtime_error("Tensor constructor with device pointer requires 'cuda' device specification.");
+    }
+}
+
+
 // Copy Constructor
 Tensor::Tensor(const Tensor& other) 
     : totalVals(other.totalVals), nDimensions(other.nDimensions), device(other.device), dimensions(other.dimensions), values(other.values) {
@@ -306,9 +314,7 @@ Tensor operator+(Tensor a, Tensor b) {
                 matrix_addition(a_batch, b_batch, c_batch, n, m);
 
             }
-            vector<float> host_values(m * n * batchSize);
-            cudaMemcpy(host_values.data(), zeros_device, m* n * batchSize  * sizeof(float), cudaMemcpyDeviceToHost);
-            return Tensor(host_values, resultingDims, string("cuda"));
+            return Tensor(zeros_device, resultingDims);
         } else {
             for(int i = 0; i < totalValues; i++) {
                 int idxA = 0;
@@ -457,7 +463,7 @@ Tensor operator*(Tensor a, Tensor b) {
             }
             //float* host_values = (float *)malloc(m * p * batchSize * sizeof(float));
             //cudaMemcpy(host_values, zeros_device, m* p * batchSize  * sizeof(float), cudaMemcpyDeviceToHost);
-            return Tensor(outputValues, resultingDims, string("cuda"));
+            return Tensor(zeros_device, resultingDims);
             //return ;
         } else {
             for (int batch = 0; batch < batchSize; batch++) {

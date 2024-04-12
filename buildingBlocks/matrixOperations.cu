@@ -35,7 +35,39 @@ __global__ void scaleMatrix(float* a, float* b, float scalar, int n, int m){
 
 // Matrix Multiplication
 // Try Strassen Algorithm????
+// #define TILE_WIDTH 16
 
+// __global__ void multiplyMatrices(float *d_A, float *d_B, float *d_C, int M, int N, int P) {
+//     __shared__ float tile_A[TILE_WIDTH][TILE_WIDTH];
+//     __shared__ float tile_B[TILE_WIDTH][TILE_WIDTH];
+
+//     int row = blockIdx.y * blockDim.y + threadIdx.y;
+//     int col = blockIdx.x * blockDim.x + threadIdx.x;
+//     float sum = 0.0f;
+
+//     for (int k = 0; k < (N + TILE_WIDTH - 1) / TILE_WIDTH; ++k) {
+//         if (row < M && k*TILE_WIDTH + threadIdx.x < N)
+//             tile_A[threadIdx.y][threadIdx.x] = d_A[row*N + k*TILE_WIDTH + threadIdx.x];
+//         else
+//             tile_A[threadIdx.y][threadIdx.x] = 0.0;
+
+//         if (col < P && k*TILE_WIDTH + threadIdx.y < N)
+//             tile_B[threadIdx.y][threadIdx.x] = d_B[(k*TILE_WIDTH + threadIdx.y)*P + col];
+//         else
+//             tile_B[threadIdx.y][threadIdx.x] = 0.0;
+
+//         __syncthreads();
+
+//         for (int n = 0; n < TILE_WIDTH; ++n) {
+//             sum += tile_A[threadIdx.y][n] * tile_B[n][threadIdx.x];
+//         }
+//         __syncthreads();
+//     }
+
+//     if (row < M && col < P) {
+//         d_C[row*P + col] = sum;
+//     }
+// }
 __global__ void multiplyMatrices(float *d_A, float *d_B, float *d_C, int M, int N, int P) {
         int row = blockIdx.y * blockDim.y + threadIdx.y;
         int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -83,7 +115,7 @@ namespace MatrixOperations {
 	}
 
 	void matrix_multiplication(float* a, float *b, float* c, int n, int m, int p){
-		dim3 blockSize(64, 64);
+		dim3 blockSize(16, 16);
 		dim3 gridDim((p+blockSize.x - 1)/blockSize.x, (m + blockSize.y-1)/blockSize.y);
 		multiplyMatrices<<<gridDim, blockSize>>>(a, b, c, m, n, p);
 		cudaDeviceSynchronize();

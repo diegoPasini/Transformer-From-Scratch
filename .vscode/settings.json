@@ -57,6 +57,7 @@
   "C_Cpp_Runner.useLinkTimeOptimization": false,
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
   "files.associations": {
-    "cmath": "cpp"
+    "cmath": "cpp",
+    "vector": "cpp"
   }
 }

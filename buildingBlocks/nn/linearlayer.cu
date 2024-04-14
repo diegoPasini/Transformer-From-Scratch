@@ -11,4 +11,7 @@ __global__ void linear_layer_forward(float* x, float* w, float* b, float* c, flo
 		c[i] = w[i] * x[i] + b[i];
 }
 	
+__global__ void linear_layer_backward(){
+	
+}
 

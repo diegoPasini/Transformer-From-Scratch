@@ -24,6 +24,7 @@ float binary_cross_entropy(int actual, int prediction, float probability){
 float categorical_cross_entropy(vector<float> predicted, vector<float> actual) {
     loss = 0;
     for(int i = 0; i < predicted.size(); i++) {
-        
+        loss = loss + (-1 * actual[i] * log(predicted[i]));
     }
+    return loss;
 }

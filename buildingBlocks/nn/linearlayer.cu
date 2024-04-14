@@ -10,5 +10,5 @@ __global__ void linear_layer_forward(float* x, float* w, float* b, float* c, flo
 	if (i < size)
 		c[i] = w[i] * x[i] + b[i];
 }
-
+	
 

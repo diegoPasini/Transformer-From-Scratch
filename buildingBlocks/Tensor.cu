@@ -565,30 +565,3 @@ float standardDev(Tensor a) {
 //     vector<int> resDimensions = {1};
 //     return Tensor result(resValues, resDimensions);
 // }
-
-// Tensor softmax(Tensor a) { // IN PROGRESS
-//     if (a.getNumDimensions() != 1) {
-//         std::ostringstream msg;
-//         msg << "Softmax cannot be applied to a tensor with zero dimensions or with more than 1 dimension.";
-//         throw std::invalid_argument(msg.str());
-//     }
-
-//     if(a.getDevice() == "cuda") {
-//         float* values;
-//         float numValues;
-//         cudaMalloc(&values, sizeof(a.getValues));
-//         cudaMalloc(&values, a.getValues(), sizeof(a.getValues()), cudaMemcpyHostToDevice);
-        
-//     } else {
-//         float denominator = 0;
-//         float* values = a.getValues();
-//         float* softmaxValues = new float[a.getTotalValues()];
-//         for (int i = 0; i < a.getTotalValues(); i++) {
-//             denominator += exp(values[i]);
-//         }
-//         for (int i = 0; i < a.getTotalValues(); i++) {
-//             softmaxValues[i] = exp(values[i]) / denominator;
-//         }
-//         return Tensor(softmaxValues, a.getDimensions(), 1);
-//     }
-// }

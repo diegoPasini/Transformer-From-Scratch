@@ -12,6 +12,6 @@ __global__ void linear_layer_forward(float* x, float* w, float* b, float* c, flo
 }
 	
 __global__ void linear_layer_backward(){
-	
+	return ;
 }
 

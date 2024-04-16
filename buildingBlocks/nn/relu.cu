@@ -11,4 +11,3 @@ __global__ void relu_forward(float* a, float* b, float alpha, int size){
 		b[i] = fmaxf(alpha * a[i], b[i]);
 }
 
-

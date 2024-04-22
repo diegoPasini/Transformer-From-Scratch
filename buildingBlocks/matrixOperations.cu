@@ -12,7 +12,6 @@ __global__ void addVectors(float* a, float* b, float *c, int size){
 		c[i] = a[i] + b[i];
 }
 
-
 // Matrix Addition
 __global__ void addMatrices(float* a, float *b, float *c, int n, int m){
 	int i = blockIdx.x * blockDim.x + threadIdx.x;

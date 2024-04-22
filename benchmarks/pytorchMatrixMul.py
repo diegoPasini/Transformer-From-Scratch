@@ -7,9 +7,9 @@ def benchmark_matrix_operations():
 
     # Create a 10,000 x 10,000 matrix with values equal to their index
     # The index for each value is calculated as the row index times the number of columns plus the column index
-    nrows, ncols = 1000, 1000
+    nrows, ncols = 100000, 100000
     
-    matrix = torch.arange(nrows * ncols, device="cuda").float().reshape((nrows, ncols))
+    matrix = torch.arange(nrows * ncols).float().reshape((nrows, ncols))
 
     # Time after creation
     creation_time = time.time() - start_time

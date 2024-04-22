@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <cmath>
+#include <vector>
 
 
 // Mean Squared Error

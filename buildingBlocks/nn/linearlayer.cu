@@ -10,14 +10,13 @@
 #include "Layer.cpp"
 #include <memory>
 
-
 using namespace std;
 
 class LinearLayer : public Layer {
 	private:
 		int input_features;
 		int output_features;
-
+		float learning_rate;
 		// Number of rows equal to the number of neurons in the previous layer.
 		// Number of columns equal tot he number of neurons in the next layer.
 		unique_ptr<Tensor> weights;
@@ -52,8 +51,8 @@ class LinearLayer : public Layer {
 
 
 	public: 
-		LinearLayer(int input_features, int output_features) 
-		: input_features(input_features), output_features(output_features) { 
+		LinearLayer(int input_features, int output_features, float learning_rate) 
+		: input_features(input_features), output_features(output_features), learning_rate(learning_rate) { 
 			intialize_weights();
 		}
 
@@ -64,8 +63,8 @@ class LinearLayer : public Layer {
 			return x;
 		}
 
-		void backward(float gammaPrev, ) {
-			
+		Tensor backward(Tensor gammaPrev) {
+			weights = weights + (-1.0f * learning_rate * gammaPrev * inputs); 
 		}
 };
 

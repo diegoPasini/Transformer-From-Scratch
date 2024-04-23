@@ -4,7 +4,6 @@
 #include <cmath>
 #include <vector>
 
-
 // Mean Squared Error
 float mean_squared_error(vector<float> predicted, vector<float> actual){
     float summation = 0;

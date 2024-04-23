@@ -21,8 +21,10 @@ class LinearLayer {
 		// Number of columns equal tot he number of neurons in the next layer.
 		unique_ptr<Tensor> weights;
     	unique_ptr<Tensor> bias;
+		Tensor inputs;
+		Tensor outputs;
 		
-		void initialize_values() {
+		void intialize_weights() {
 			float k = 1 / input_features; 
 			random_device rd;  // a seed source for the random number engine
     		mt19937 gen(rd());
@@ -47,27 +49,33 @@ class LinearLayer {
 			bias = make_unique<Tensor>(biasTemp, {output_features});
 		}
 
-		
+
 	public: 
 		LinearLayer(int input_features, int output_features) 
 		: input_features(input_features), output_features(output_features) { 
-			
+			intialize_weights();
 		}
 
-		
+		Tensor forward(Tensor x) {
+			this->inputs = x;
+			x = *weights * x + *bias;
+			this->outputs = x;
+			return x;
+		}
 
-
-	
+		void backward(float gammaPrev, ) {
+			
+		}
 };
 
-// linear layer cuda implementation
-__global__ void linear_layer_forward(float* x, float* w, float* b, float* c, float alpha, int size){
-	int i = blockDim.x * blockIdx.x + threadIdx.x;
-	if (i < size)
-		c[i] = w[i] * x[i] + b[i];
-}
+// // linear layer cuda implementation
+// __global__ void linear_layer_forward(float* x, float* w, float* b, float* c, float alpha, int size){
+// 	int i = blockDim.x * blockIdx.x + threadIdx.x;
+// 	if (i < size)
+// 		c[i] = w[i] * x[i] + b[i];
+// }
 	
-__global__ void linear_layer_backward(){
-	return ;
-}
+// __global__ void linear_layer_backward(){
+// 	return ;
+// }
 

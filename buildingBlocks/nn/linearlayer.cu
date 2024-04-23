@@ -7,12 +7,13 @@
 #include <cstdlib>
 #include <cmath>
 #include "../Tensor.cuh"
+#include "Layer.cpp"
 #include <memory>
 
 
 using namespace std;
 
-class LinearLayer {
+class LinearLayer : public Layer {
 	private:
 		int input_features;
 		int output_features;

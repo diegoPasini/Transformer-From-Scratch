@@ -2,8 +2,10 @@
 #include <stdio.h>
 #include <iostream>
 #include <cmath>
+#include <string>
+#include "Layer.cpp"
 
-class ReLU {
+class ReLU : public Layer {
 	public: 
 	// relu cuda forward implementation
 	__global__ void relu_forward(float* a, float* b, float alpha, int size){

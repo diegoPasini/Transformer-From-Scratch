@@ -2,8 +2,9 @@
 #include <stdio.h>
 #include <iostream>
 #include <cmath>
+#include "Layer.cpp"
 
-class SoftmaxLayer {
+class SoftmaxLayer : public Layer {
     public:
 
         int size;

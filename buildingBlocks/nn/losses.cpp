@@ -14,11 +14,6 @@ float mean_squared_error(vector<float> predicted, vector<float> actual){
     return summation;
 }
 
-// Binary Cross Entropy
-float binary_cross_entropy(int actual, int prediction, float probability){
-    return - (prediction * log(probability) + (1 - prediction) * log((1 - probability)))
-}
-
 // Cross Entropy Loss
 // THIS ASSUMES SOFTMAX HAS ALREADY BEEN APPLIED TO THE PREDICTIONS
 float categorical_cross_entropy(vector<float> predicted, vector<float> actual) {

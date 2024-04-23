@@ -11,7 +11,6 @@ class Module {
     private:
         
         std::vector<std::unique_ptr<Layer>> layers;
-        
 
     public:
 

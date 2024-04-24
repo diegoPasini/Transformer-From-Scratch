@@ -27,6 +27,9 @@ Tensor::Tensor(float* c_device, const vector<int>& dims, string dev)
     }
 }
 
+Tensor::Tensor() {
+
+}
 
 // Copy Constructor
 Tensor::Tensor(const Tensor& other) 
@@ -124,14 +127,15 @@ string Tensor::getDevice() const {
     return device;
 }
 
-vector<float> Tensor::getValues() const{
+void Tensor::uploadFromCuda() {
+    cudaMemcpy(values.data(), valuesCuda, totalVals * sizeof(float), cudaMemcpyDeviceToHost);
+}
+
+vector<float> Tensor::getValues() {
     if (device == "cuda") {
-        vector<float> hostValues(totalVals);
-        cudaMemcpy(hostValues.data(), valuesCuda, totalVals * sizeof(float), cudaMemcpyDeviceToHost);
-        return hostValues; 
-    } else {
-        return values;
+        uploadFromCuda();
     }
+    return values;
 }
 
 //Operator Overloading
@@ -166,7 +170,7 @@ string Tensor::getDimensionsString() const {
 }
 
 // toString function
-string Tensor::toString() const {
+string Tensor::toString() {
     ostringstream oss;
     if (nDimensions == 1) {
         oss << "[";
@@ -393,6 +397,27 @@ Tensor operator+(Tensor a, Tensor b) {
         return a_tensor + b_tensor;
     }
 }
+
+
+// Matrix Multiplication By Scalar
+Tensor operator*(float x, Tensor a) {
+    if (a.device == "cuda") {
+        float* device_arr;
+        cudaMalloc((void**)&device_arr, a.getNumDimensions() * sizeof(float));
+        cudaMemset(device_arr, 0, a.getNumDimensions() * sizeof(float));
+        matrix_scaling(a.valuesCuda, device_arr, x, a.getDimensions()[0], a.getDimensions()[1]);
+        //float* host_values = (float *)malloc(m * p * batchSize * sizeof(float));
+        //cudaMemcpy(host_values, zeros_device, m* p * batchSize  * sizeof(float), cudaMemcpyDeviceToHost);
+        return Tensor(device_arr, a.getDimensions());
+    } else {
+        vector<float> valuesCopy(a.values);
+        for(int i = 0; i < a.totalVals; i++) {
+            valuesCopy[i] = valuesCopy[i] * x; 
+        }
+        return Tensor(valuesCopy, a.dimensions);
+    }
+}
+
 
 
 // Matrix Multiplication

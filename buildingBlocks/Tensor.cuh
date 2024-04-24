@@ -9,6 +9,7 @@ using namespace std;
 class Tensor {
     public:
         // Constructor: Initializes a tensor with given values, dimensions, and optionally specifies the device
+        Tensor();
         Tensor(const vector<float>& vals, const vector<int>& dims, string dev = "");
         Tensor(float* c_device, const vector<int>& dims, string dev = "cuda");
 
@@ -32,12 +33,13 @@ class Tensor {
         int getNumDimensions() const;
         vector<int> getDimensions() const;
         string getDevice() const;
-        vector<float> getValues() const;
+        vector<float> getValues();
         
 
         // Operation to reshape the tensor
         void reshape(const vector<int>& newDims);
 
+        void uploadFromCuda();
         
         // Indexing Operator
         float operator[](const vector<int>& indices) const;
@@ -57,7 +59,7 @@ class Tensor {
         string getDimensionsString() const;
 
         // toString function
-        string toString() const;
+        string toString();
 
         // TO - DO: FINISH BROADCASTABLE IMPLEMENTATION:
         // // Checks if two tensors are broadcastable

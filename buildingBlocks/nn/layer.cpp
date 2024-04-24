@@ -5,9 +5,9 @@ class Layer {
 public:
     
     virtual ~Layer() = default;
-    virtual Tensor forward(Tensor x);
-    virtual Tensor backward(Tensor x);
-    virtual string toString();
+    virtual Tensor forward(Tensor x) = 0;
+    virtual Tensor backward(Tensor x) = 0;
+    virtual string toStringWeights() = 0;
 
 private:
 

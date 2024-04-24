@@ -7,7 +7,8 @@
 #include <cstdlib>
 #include <cmath>
 #include "../Tensor.cuh"
-#include "Layer.cpp"
+#include "layer.cpp"
+
 #include <memory>
 
 using namespace std;
@@ -25,7 +26,7 @@ class LinearLayer : public Layer {
 		Tensor outputs;
 		
 		void intialize_weights() {
-			float k = 1 / input_features; 
+			float k = 1 / float(input_features); 
 			random_device rd;  // a seed source for the random number engine
     		mt19937 gen(rd());
 			// First we intialize the weights based on a uniform distribution 
@@ -38,33 +39,46 @@ class LinearLayer : public Layer {
 					weightsTemp[i * input_features + j] = generated;
 				}
 			}
-
-			weights = make_unique<Tensor>(weightsTemp, {input_features, output_features});
+			vector<int> dims = {input_features, output_features};
+			weights = make_unique<Tensor>(weightsTemp, dims, string("cuda"));
 			vector<float> biasTemp(output_features);
 
 			for (int i = 0; i < output_features; i++) {
 				biasTemp[i] = distr(gen);
 			}
-
-			bias = make_unique<Tensor>(biasTemp, {output_features});
+			vector<int> dim = {output_features};
+			bias = make_unique<Tensor>(biasTemp, dim, string("cuda"));
 		}
 
 
 	public: 
 		LinearLayer(int input_features, int output_features, float learning_rate) 
-		: input_features(input_features), output_features(output_features), learning_rate(learning_rate) { 
+		: learning_rate(learning_rate) { 
+			this->input_features = input_features;
+			this->output_features = output_features;
 			intialize_weights();
 		}
+
+		// Destructor
+		~LinearLayer() {
+		}
+
 
 		Tensor forward(Tensor x) {
 			this->inputs = x;
 			x = *weights * x + *bias;
-			this->outputs = x;
+			//this->outputs = x;
 			return x;
 		}
 
 		Tensor backward(Tensor gammaPrev) {
-			weights = weights + (-1.0f * learning_rate * gammaPrev * inputs); 
+			*weights = *weights + (-1.0f * learning_rate * gammaPrev * inputs); 
+			*bias = *bias + (-1.0f * learning_rate * gammaPrev);
+			return *weights;
+		}
+
+		string toStringWeights() {
+			return (*weights).toString();
 		}
 };
 

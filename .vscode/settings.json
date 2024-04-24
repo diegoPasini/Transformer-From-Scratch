@@ -59,6 +59,8 @@
   "files.associations": {
     "cmath": "cpp",
     "vector": "cpp",
-    "iosfwd": "cpp"
+    "iosfwd": "cpp",
+    "random": "cpp",
+    "ostream": "cpp"
   }
 }

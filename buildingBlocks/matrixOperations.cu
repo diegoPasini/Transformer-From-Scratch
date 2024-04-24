@@ -16,7 +16,7 @@ __global__ void addVectors(float* a, float* b, float *c, int size){
 __global__ void addMatrices(float* a, float *b, float *c, int n, int m){
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
-    if (j < m && i < n) {
+    if (j < n && i < m) {
         c[i * n + j]= a[i * n + j] + b[i * n + j];
     }
 }
@@ -25,7 +25,7 @@ __global__ void addMatrices(float* a, float *b, float *c, int n, int m){
 __global__ void scaleMatrix(float* a, float* b, float scalar, int n, int m){
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
-	if (j < m && i < n) {
+	if (j < n && i < m) {
         b[i * n + j]= a[i * n + j] * scalar;
     }
 }

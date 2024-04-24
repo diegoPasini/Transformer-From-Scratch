@@ -46,7 +46,7 @@ class LinearLayer : public Layer {
 			for (int i = 0; i < output_features; i++) {
 				biasTemp[i] = distr(gen);
 			}
-			vector<int> dim = {output_features};
+			vector<int> dim = {output_features, 1};
 			bias = make_unique<Tensor>(biasTemp, dim, string("cuda"));
 		}
 
@@ -68,6 +68,7 @@ class LinearLayer : public Layer {
 			this->inputs = x;
 			x = (*weights * x);
 			cout << x.toString() << endl;
+			cout << (*bias).toString() << endl;
 			x = x + *bias;
 			//this->outputs = x;
 			return x;

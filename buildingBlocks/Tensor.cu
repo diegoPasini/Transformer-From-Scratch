@@ -22,25 +22,22 @@ Tensor::Tensor(const vector<float>& vals, const vector<int>& dims, string dev)
 
 Tensor::Tensor(float* c_device, const vector<int>& dims, string dev)
     : dimensions(dims), totalVals(accumulate(dims.begin(), dims.end(), 1, multiplies<int>())), nDimensions(dims.size()), device(dev) {
-    // Allocate memory on the device
     values = vector<float>(totalVals);
     cudaError_t status = cudaMalloc((void**)&valuesCuda, totalVals * sizeof(float));
     if (status != cudaSuccess) {
         throw runtime_error("Failed to allocate device memory: " + string(cudaGetErrorString(status)));
     }
 
-    // Copy data from input device pointer to allocated device memory
     status = cudaMemcpyAsync(valuesCuda, c_device, totalVals * sizeof(float), cudaMemcpyDeviceToDevice);
     if (status != cudaSuccess) {
-        cudaFree(valuesCuda);  // Clean up if copy fails
+        cudaFree(valuesCuda);
         throw runtime_error("Failed to copy data to device memory: " + string(cudaGetErrorString(status)));
     }
 
-    // Synchronize to handle any potential issues immediately
     cudaDeviceSynchronize();
     status = cudaGetLastError();
     if (status != cudaSuccess) {
-        cudaFree(valuesCuda);  // Clean up on error
+        cudaFree(valuesCuda); 
         throw runtime_error("CUDA error after copying data: " + string(cudaGetErrorString(status)));
     }
 }
@@ -317,6 +314,7 @@ Tensor operator+(Tensor a, Tensor b) {
         // n Dimensional Matrix Addition:
         if(a.device == "cuda" && b.device == "cuda") {
             vector<int> resultingDims = a.dimensions;
+            
             resultingDims[a.nDimensions - 1] = b.dimensions[b.nDimensions - 1];
             int totalOutputVals = 1;
             for (int i = 0; i < a.nDimensions; i++) {

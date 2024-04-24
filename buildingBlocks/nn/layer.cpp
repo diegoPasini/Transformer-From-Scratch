@@ -13,5 +13,6 @@ private:
 
     int inputFeatures;
     int outputFeatures;
+    // Tensor weights;
 
 };

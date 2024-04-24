@@ -67,15 +67,26 @@ class LinearLayer : public Layer {
 		Tensor forward(Tensor x) {
 			this->inputs = x;
 			x = (*weights * x);
-			cout << x.toString() << endl;
-			cout << (*bias).toString() << endl;
+			//cout << x.toString() << endl;
+			//cout << (*bias).toString() << endl;
 			x = x + *bias;
 			//this->outputs = x;
 			return x;
 		}
 
 		Tensor backward(Tensor gammaPrev) {
-			*weights = *weights + (-1.0f * learning_rate * gammaPrev * inputs); 
+			//cout << "Value: " << (-1.0f * learning_rate * multiply(gammaPrev, inputs)).toString() << endl;
+			
+			Tensor x = -1.0f * learning_rate * multiply(gammaPrev, inputs);
+			vector<float> newValues(x.getTotalValues() * output_features);
+			vector<float> originalValues = x.getValues();
+			for(int i = 0; i < x.getTotalValues(); i++) {
+				for (int j = 0; j < output_features; j++) {
+					newValues[i * output_features + j] = originalValues[i];
+				}
+			}
+			Tensor weightsBroadcast(newValues, {input_features, output_features}, "cuda");
+			*weights = *weights + weightsBroadcast; 
 			*bias = *bias + (-1.0f * learning_rate * gammaPrev);
 			return *weights;
 		}
@@ -98,7 +109,7 @@ class LinearLayer : public Layer {
 // 		c[i] = w[i] * x[i] + b[i];
 // }
 	
-// __global__ void linear_layer_backward(){
+// __global__ void linear_layer_backward(float){
 // 	return ;
 // }
 

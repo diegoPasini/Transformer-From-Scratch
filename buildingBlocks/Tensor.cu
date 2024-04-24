@@ -314,7 +314,7 @@ Tensor operator+(Tensor a, Tensor b) {
         // n Dimensional Matrix Addition:
         if(a.device == "cuda" && b.device == "cuda") {
             vector<int> resultingDims = a.dimensions;
-            
+
             resultingDims[a.nDimensions - 1] = b.dimensions[b.nDimensions - 1];
             int totalOutputVals = 1;
             for (int i = 0; i < a.nDimensions; i++) {
@@ -448,15 +448,16 @@ Tensor operator*(Tensor a, Tensor b) {
         int lastDimB = b.dimensions[b.nDimensions - 1];
         int secondLastDimB = b.dimensions[b.nDimensions - 2];
         
-        if (lastDimA != secondLastDimB) {
+        if (lastDimA != secondLastDimB && (lastDimA != 1 && lastDimB != 1)) {
             std::ostringstream msg;
             msg << "Tensor of shape" << a.getDimensionsString() << "is not possible to matrix multiply with tensor of shape" << b.getDimensionsString() << ".";
             throw std::invalid_argument(msg.str());
         }
     }
 
-    if(a.nDimensions == 1 && b.nDimensions == 1) {
+    if((a.nDimensions == 1 && b.nDimensions == 1) || (a.dimensions[a.nDimensions - 1] ==  1 && b.dimensions[b.nDimensions - 1] == 1)) {
         if(a.device == "cuda" && b.device == "cuda") {
+            cout << "Used Dot Product" << endl;
             vector<float> result(1);
             result[0] = 0;
             for(int i = 0; i < a.totalVals; i ++) {
@@ -543,6 +544,136 @@ float mean(Tensor a) {
     return sum / a.getTotalValues();
 }
 
+Tensor multiply(Tensor a, Tensor b) {
+    if(checkShape(a, b)) {
+        if(a.nDimensions == 1 && b.nDimensions == 1) {
+            if(a.device == "cuda" && b.device == "cuda") {
+                float* results;
+                cudaMalloc((void**)&results, a.getTotalValues() * sizeof(float));
+                cudaMemset(results, 0, a.getTotalValues() * sizeof(float));
+                vector_addition(a.valuesCuda, b.valuesCuda, results, a.totalVals);
+                vector<float> host_values(a.getTotalValues());
+                cudaMemcpy(host_values.data(), results, a.getTotalValues() * sizeof(float), cudaMemcpyDeviceToHost);
+                vector<int> dims = {a.getTotalValues()};
+                return Tensor(host_values, dims, string("cuda")); 
+            } else {
+                vector<float> results(a.totalVals);
+                for(int i = 0; i < a.totalVals; i ++) {
+                    results[i] = a.values[i] + b.values[i];
+                }
+                vector<int> dims = {a.getTotalValues()};
+                return Tensor(results, dims);
+            }
+        }
+
+        vector<int> broadcastingShape = getShapeBroadcasting(a, b);
+        int numDims = max(a.nDimensions, b.nDimensions);
+        int totalValues = broadcastingShape.size();
+
+        vector<float> resultValues(totalValues);
+
+        // n Dimensional Matrix Addition:
+        if(a.device == "cuda" && b.device == "cuda") {
+            vector<int> resultingDims = a.dimensions;
+
+            resultingDims[a.nDimensions - 1] = b.dimensions[b.nDimensions - 1];
+            int totalOutputVals = 1;
+            for (int i = 0; i < a.nDimensions; i++) {
+                totalOutputVals *= resultingDims[i];
+            }
+            vector<float> outputValues(totalOutputVals);
+            int n = a.dimensions[a.nDimensions - 2];
+            int m = a.dimensions[a.nDimensions - 1]; 
+            int batchSize = totalOutputVals / (n*m);
+            float* zeros_device;
+            cudaMalloc((void**)&zeros_device, batchSize * n * m * sizeof(float));
+            cudaMemset(zeros_device, 0, batchSize * m * n * sizeof(float));
+            for (int batch = 0; batch < batchSize; batch++) {
+                float* a_batch = a.valuesCuda + batch * (n * m);
+                float* b_batch = b.valuesCuda + batch * (n * m);
+                float* c_batch = zeros_device + batch * (m * n);
+                multiply_matrix_elements(a_batch, b_batch, c_batch, n, m);
+
+            }
+            return Tensor(zeros_device, resultingDims, string("cuda"));
+        } else {
+            for(int i = 0; i < totalValues; i++) {
+                int idxA = 0;
+                int idxB = 0;
+                int multiplierA = 1;
+                int multiplierB = 1;
+                for(int dim = numDims - 1; dim >= 0; dim--) {
+                    int dimA = dim - (numDims - a.nDimensions);
+                    int dimB = dim - (numDims - b.nDimensions);
+                    int dimIndex = (i / multiplierA) % broadcastingShape[dim];
+
+                    if (dimA >= 0 && a.dimensions[dimA] != 1) {
+                        idxA += (dimIndex * multiplierA);
+                    }
+                    if (dimB >= 0 && b.dimensions[dimB] != 1) {
+                        idxB += (dimIndex * multiplierB);
+                    }
+
+                    if (dimA >= 0) multiplierA *= a.dimensions[dimA];
+                    if (dimB >= 0) multiplierB *= b.dimensions[dimB];
+                }
+                resultValues[i] = a.values[idxA] * b.values[idxB];
+            }
+            return Tensor(resultValues, broadcastingShape);
+        }
+    } else {
+        vector<int> shapeBroadcast = getShapeBroadcasting(a, b);
+        int maxDim = max(a.nDimensions, b.nDimensions);
+        int minDim = min(a.nDimensions, b.nDimensions);
+        vector<float> a_vals = a.getValues();
+        vector<float> b_vals = b.getValues();
+        int a_sizeFactor = 1;
+        int b_sizeFactor = 1;
+
+        for(int i = 0; i < maxDim; i++) {
+            if (i < minDim) {
+                int indexA = a.nDimensions - i - 1;
+                int indexB = b.nDimensions - i - 1;
+                if((a.dimensions[indexA] != b.dimensions[indexB]) && a.dimensions[indexA] != 1 && b.dimensions[indexB] != 1 ) {
+                    std::ostringstream msg;
+                    msg << "Tensor of shape" << a.getDimensionsString() << "is not broadcastable with tensor of shape" << b.getDimensionsString() << ".";
+                    throw std::invalid_argument(msg.str());
+                }
+                if (a.dimensions[indexA] == 0 || a.dimensions[indexA] == 1) {
+                    a_sizeFactor *= shapeBroadcast[maxDim - i - 1];
+                }
+                if (b.dimensions[indexB] == 0 || b.dimensions[indexB] == 1) {
+                    b_sizeFactor *= shapeBroadcast[maxDim - i - 1];
+                }
+            } else {
+                if (a.nDimensions > b.nDimensions) {
+                    b_sizeFactor *= shapeBroadcast[maxDim - i - 1];
+                } else {
+                    a_sizeFactor *= shapeBroadcast[maxDim - i - 1];
+                }
+            }
+        }
+        
+        vector<float> a_result(a_sizeFactor * a.totalVals);
+        vector<float> b_result(b_sizeFactor * b.totalVals);
+        
+        for (int i = 0; i < a_sizeFactor; i++) {
+            for (int j = 0; j < a.totalVals; j++) {
+                a_result[i * a.totalVals + j] = a_vals[j];
+            }
+        }
+
+        for (int i = 0; i < b_sizeFactor; i++) {
+            for (int j = 0; j < b.totalVals; j++) {
+                b_result[i * b.totalVals + j] = b_vals[j];
+            }
+        }
+
+        Tensor a_tensor = Tensor(a_result, shapeBroadcast);
+        Tensor b_tensor = Tensor(b_result, shapeBroadcast);
+        return a_tensor + b_tensor;
+    }
+}
 
 Tensor mean(Tensor a, int dim) {
     vector<float> values = a.getValues();

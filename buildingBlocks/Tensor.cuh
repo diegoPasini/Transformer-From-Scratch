@@ -71,6 +71,8 @@ class Tensor {
         // // Get Broadcastable Shape
         friend vector<int> getShapeBroadcasting(Tensor a, Tensor b);
 
+        friend Tensor multiply(Tensor a, Tensor b); 
+
 
         // Get mean
         friend float mean(Tensor a);

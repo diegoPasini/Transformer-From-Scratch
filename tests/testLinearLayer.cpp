@@ -17,5 +17,12 @@ int main() {
     cout << lin.toStringBiases() << endl;
     Tensor y = lin.forward(Tensor(input, dimensions, "cuda"));
     cout << y.toString() << endl;
-    
+    vector<float> gammaValues = {2, 2, 2};
+    vector<int> gammaDimensions = {3, 1};
+    Tensor gamma(gammaValues, gammaDimensions, "cuda");
+    Tensor newGamma = lin.backward(gamma);
+    cout << "Weights" << endl;
+    cout << lin.toStringWeights() << endl;
+    cout << lin.toStringBiases() << endl;
+    cout << newGamma.toString() << endl;
 }

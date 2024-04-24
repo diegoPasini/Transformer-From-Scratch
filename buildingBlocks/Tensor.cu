@@ -15,15 +15,33 @@ Tensor::Tensor(const vector<float>& vals, const vector<int>& dims, string dev)
     : dimensions(dims), totalVals(vals.size()), nDimensions(dims.size()), device(dev), values(vals) {
     if("cuda" == dev){
         int size2 = totalVals*sizeof(float);
-        cudaMalloc(&valuesCuda, size2);
+        cudaMalloc((void**)&valuesCuda, size2);
         cudaMemcpy(valuesCuda, vals.data(), size2, cudaMemcpyHostToDevice);
     }
 }
 
 Tensor::Tensor(float* c_device, const vector<int>& dims, string dev)
-    : dimensions(dims), totalVals(accumulate(dims.begin(), dims.end(), 1, multiplies<int>())), nDimensions(dims.size()), device(dev), valuesCuda(c_device) {
-    if (dev.compare("cuda") != 0) {
-        throw runtime_error("Tensor constructor with device pointer requires 'cuda' device specification.");
+    : dimensions(dims), totalVals(accumulate(dims.begin(), dims.end(), 1, multiplies<int>())), nDimensions(dims.size()), device(dev) {
+    // Allocate memory on the device
+    values = vector<float>(totalVals);
+    cudaError_t status = cudaMalloc((void**)&valuesCuda, totalVals * sizeof(float));
+    if (status != cudaSuccess) {
+        throw runtime_error("Failed to allocate device memory: " + string(cudaGetErrorString(status)));
+    }
+
+    // Copy data from input device pointer to allocated device memory
+    status = cudaMemcpyAsync(valuesCuda, c_device, totalVals * sizeof(float), cudaMemcpyDeviceToDevice);
+    if (status != cudaSuccess) {
+        cudaFree(valuesCuda);  // Clean up if copy fails
+        throw runtime_error("Failed to copy data to device memory: " + string(cudaGetErrorString(status)));
+    }
+
+    // Synchronize to handle any potential issues immediately
+    cudaDeviceSynchronize();
+    status = cudaGetLastError();
+    if (status != cudaSuccess) {
+        cudaFree(valuesCuda);  // Clean up on error
+        throw runtime_error("CUDA error after copying data: " + string(cudaGetErrorString(status)));
     }
 }
 
@@ -318,7 +336,7 @@ Tensor operator+(Tensor a, Tensor b) {
                 matrix_addition(a_batch, b_batch, c_batch, n, m);
 
             }
-            return Tensor(zeros_device, resultingDims);
+            return Tensor(zeros_device, resultingDims, string("cuda"));
         } else {
             for(int i = 0; i < totalValues; i++) {
                 int idxA = 0;
@@ -403,12 +421,16 @@ Tensor operator+(Tensor a, Tensor b) {
 Tensor operator*(float x, Tensor a) {
     if (a.device == "cuda") {
         float* device_arr;
-        cudaMalloc((void**)&device_arr, a.getNumDimensions() * sizeof(float));
-        cudaMemset(device_arr, 0, a.getNumDimensions() * sizeof(float));
+        cudaMalloc((void**)&device_arr, a.totalVals * sizeof(float));
+        cudaMemset(device_arr, 0, a.totalVals * sizeof(float));
         matrix_scaling(a.valuesCuda, device_arr, x, a.getDimensions()[0], a.getDimensions()[1]);
+        if (cudaPeekAtLastError() != cudaSuccess) {
+            cudaFree(device_arr);  // Free memory on error
+            throw std::runtime_error("CUDA error: " + std::string(cudaGetErrorString(cudaGetLastError())));
+        }
         //float* host_values = (float *)malloc(m * p * batchSize * sizeof(float));
         //cudaMemcpy(host_values, zeros_device, m* p * batchSize  * sizeof(float), cudaMemcpyDeviceToHost);
-        return Tensor(device_arr, a.getDimensions());
+        return Tensor(device_arr, a.getDimensions(), string("cuda"));
     } else {
         vector<float> valuesCopy(a.values);
         for(int i = 0; i < a.totalVals; i++) {
@@ -422,19 +444,13 @@ Tensor operator*(float x, Tensor a) {
 
 // Matrix Multiplication
 Tensor operator*(Tensor a, Tensor b) {
-    if (!(checkShape(a, b))) {
-        std::ostringstream msg;
-        msg << "Tensor of shape" << a.getDimensionsString() << "does not have same shape as tensor with shape" << b.getDimensionsString() << ".";
-        throw std::invalid_argument(msg.str());
-    }
-
     if (a.nDimensions >= 2 && b.nDimensions >= 2) {
         int lastDimA = a.dimensions[a.nDimensions - 1];
         int secondLastDimA = a.dimensions[a.nDimensions - 2];
         int lastDimB = b.dimensions[b.nDimensions - 1];
         int secondLastDimB = b.dimensions[b.nDimensions - 2];
         
-        if (lastDimA != secondLastDimB || lastDimB != secondLastDimA) {
+        if (lastDimA != secondLastDimB) {
             std::ostringstream msg;
             msg << "Tensor of shape" << a.getDimensionsString() << "is not possible to matrix multiply with tensor of shape" << b.getDimensionsString() << ".";
             throw std::invalid_argument(msg.str());
@@ -483,13 +499,19 @@ Tensor operator*(Tensor a, Tensor b) {
                 float* a_batch = a.valuesCuda + batch * (n * m);
                 float* b_batch = b.valuesCuda + batch * (n * p);
                 float* c_batch = zeros_device + batch * (m * p);
-                matrix_multiplication(a_batch, b_batch, c_batch, n, m, p);
 
+                matrix_multiplication(a_batch, b_batch, c_batch, n, m, p);
             }
-            //float* host_values = (float *)malloc(m * p * batchSize * sizeof(float));
-            //cudaMemcpy(host_values, zeros_device, m* p * batchSize  * sizeof(float), cudaMemcpyDeviceToHost);
-            return Tensor(zeros_device, resultingDims);
-            //return ;
+            float* host_values = (float *)malloc(m * p * batchSize * sizeof(float));
+            cudaMemcpy(host_values, zeros_device, m * p * batchSize * sizeof(float), cudaMemcpyDeviceToHost);
+            vector<float> newVals(m* p * batchSize, 0);
+            for (int i = 0; i <  m* p * batchSize; i++) {
+                newVals[i] = host_values[i];
+            }
+            Tensor x(newVals, resultingDims, string("cuda"));
+            return x;
+
+
         } else {
             for (int batch = 0; batch < batchSize; batch++) {
                 for (int i = 0; i < resultingDims[a.nDimensions - 2]; i++) {

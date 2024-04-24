@@ -66,7 +66,9 @@ class LinearLayer : public Layer {
 
 		Tensor forward(Tensor x) {
 			this->inputs = x;
-			x = *weights * x + *bias;
+			x = (*weights * x);
+			cout << x.toString() << endl;
+			x = x + *bias;
 			//this->outputs = x;
 			return x;
 		}
@@ -80,11 +82,17 @@ class LinearLayer : public Layer {
 		string toStringWeights() {
 			return (*weights).toString();
 		}
+
+		string toStringBiases() {
+			return (*bias).toString();
+		}
+
+
 };
 
 // // linear layer cuda implementation
 // __global__ void linear_layer_forward(float* x, float* w, float* b, float* c, float alpha, int size){
-// 	int i = blockDim.x * blockIdx.x + threadIdx.x;
+// 	int i = blockDim.x * blockIdx.x + threadIdx.x;exit
 // 	if (i < size)
 // 		c[i] = w[i] * x[i] + b[i];
 // }

@@ -11,9 +11,9 @@ class Tensor {
         // Constructor: Initializes a tensor with given values, dimensions, and optionally specifies the device
         Tensor();
         Tensor(const vector<float>& vals, const vector<int>& dims, string dev = "");
-        Tensor(float* c_device, const vector<int>& dims, string dev = "cuda");
+        //Tensor(float& c_device, const vector<int>& dims, string dev = "cuda");
 
-        Tensor(float** c_device, int* dims, int numDims, string dev = "");
+        Tensor(float* c_device, const vector<int>& dims, string dev = "");
 
 
         // Destructor: Responsible for freeing allocated resources
@@ -53,7 +53,7 @@ class Tensor {
         // Matrix Multiplication
         friend Tensor operator*(Tensor a, Tensor b);
 
-
+        
 
         // toString Dimensions
         string getDimensionsString() const;

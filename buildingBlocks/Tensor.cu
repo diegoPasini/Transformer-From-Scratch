@@ -457,7 +457,7 @@ Tensor operator*(Tensor a, Tensor b) {
 
     if((a.nDimensions == 1 && b.nDimensions == 1) || (a.dimensions[a.nDimensions - 1] ==  1 && b.dimensions[b.nDimensions - 1] == 1)) {
         if(a.device == "cuda" && b.device == "cuda") {
-            cout << "Used Dot Product" << endl;
+            //cout << "Used Dot Product" << endl;
             vector<float> result(1);
             result[0] = 0;
             for(int i = 0; i < a.totalVals; i ++) {

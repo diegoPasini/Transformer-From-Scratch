@@ -1,5 +1,7 @@
 #include "../Tensor.cuh"
 #include <string>
+#ifndef LAYER_H  
+#define LAYER_H 
 
 class Layer {
 public:
@@ -15,3 +17,6 @@ private:
     // Tensor weights;
 
 };
+
+#endif // LAYER_H
+

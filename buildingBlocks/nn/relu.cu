@@ -3,7 +3,7 @@
 #include <iostream>
 #include <cmath>
 #include <string>
-#include "Layer.cpp"
+#include "layer.cpp"
 
 class ReLU : public Layer {
 	public: 
@@ -14,4 +14,5 @@ class ReLU : public Layer {
 			b[i] = fmaxf(alpha * a[i], b[i]);
 	}	
 }
+
 

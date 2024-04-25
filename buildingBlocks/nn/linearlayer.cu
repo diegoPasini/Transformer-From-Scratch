@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <cmath>
 #include "../Tensor.cuh"
-#include "layer.cpp"
+#include "layer.h"
 
 #include <memory>
 
@@ -76,8 +76,8 @@ class LinearLayer : public Layer {
 
 		Tensor backward(Tensor gammaPrev) {
 			//cout << "Value: " << (-1.0f * learning_rate * multiply(gammaPrev, inputs)).toString() << endl;
-			
-			Tensor x = -1.0f * learning_rate * multiply(gammaPrev, inputs);
+			Tensor newGamma = multiply(gammaPrev, inputs);
+			Tensor x = -1.0f * learning_rate * newGamma;
 			vector<float> newValues(x.getTotalValues() * output_features);
 			vector<float> originalValues = x.getValues();
 			for(int i = 0; i < x.getTotalValues(); i++) {
@@ -88,7 +88,7 @@ class LinearLayer : public Layer {
 			Tensor weightsBroadcast(newValues, {input_features, output_features}, "cuda");
 			*weights = *weights + weightsBroadcast; 
 			*bias = *bias + (-1.0f * learning_rate * gammaPrev);
-			return *weights;
+			return newGamma;
 		}
 
 		string toStringWeights() {

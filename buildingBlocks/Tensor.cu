@@ -494,7 +494,7 @@ Tensor operator*(Tensor a, Tensor b) {
                 result[0] = result[0] + (a.getValues()[i] * b.getValues()[i]);
                 
             }
-            vector<int> resultDims = {1};
+            vector<int> resultDims = {1, 1};
             return Tensor(result, resultDims, string("cuda"));
 
         } else {

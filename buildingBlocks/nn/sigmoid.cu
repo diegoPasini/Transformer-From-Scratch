@@ -28,7 +28,7 @@ class Sigmoid : public Layer {
                 sum_of_elems += x.getValues()[i];
             }
             output = 1 / (1 + exp(-sum_of_elems));
-            return Tensor({output}, {1}, "cuda");
+            return Tensor({output}, {1, 1}, "cuda");
         }   
 
 
@@ -39,6 +39,6 @@ class Sigmoid : public Layer {
             for (int i = 0; i < input_features; i++) {
                 newValues[i] = values[0];
             }
-            return Tensor(newValues, {1, input_features}, "cuda");;
+            return Tensor(newValues, {input_features, 1}, "cuda");
         }
 };

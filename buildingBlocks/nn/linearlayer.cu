@@ -69,9 +69,10 @@ class LinearLayer : public Layer {
 			//cout << "Device :" << x.getDevice() << endl;
 			//x.transpose();
 			//cout << "Weigts: " << (*weights).toString() << endl;
-			//cout << "Device :" << (*weights).getDevice() << endl;
 
 			x = (*weights * x);
+			cout << "Device :" << (*weights).getDevice() << endl;
+
 			//cout << x.toString() << endl;
 			//cout << (*bias).toString() << endl;
 			x = x + *bias;
@@ -84,17 +85,17 @@ class LinearLayer : public Layer {
 			//inputs.transpose();
 			// cout << "Input: " << inputs.toString() << endl;
 			// cout << "Inputs Shape: " << inputs.getDimensionsString() << endl;
-			// cout << "Gamma Shape: " << gammaPrev.getDimensionsString() << endl;
-			// cout << "GammaPrev: " << gammaPrev.toString() << endl;
+			cout << "Gamma Shape: " << gammaPrev.getDimensionsString() << endl;
+			cout << "GammaPrev: " << gammaPrev.toString() << endl;
 			inputs.transpose();
 			Tensor newGamma = gammaPrev * inputs;
-			//cout << "New Gamma Tranpose: " << newGamma.toString() << endl;
+			cout << "New Gamma Tranpose: " << newGamma.toString() << endl;
 			Tensor x = -1.0f * learning_rate * newGamma;
 			//x.transpose();
-			//cout << "X: " << x.toString() << endl;
-			//cout << "X Device " << (x).getDevice() << endl;
+			cout << "X: " << x.toString() << endl;
+			cout << "X Device " << (x).getDevice() << endl;
 
-			//cout << "X: " << x.toString() << endl;
+			cout << "X: " << x.toString() << endl;
 			//vector<float> newValues(x.getTotalValues() * output_features);
 			//vector<float> originalValues = x.getValues();
 			// for(int i = 0; i < x.getTotalValues(); i++) {
@@ -105,32 +106,46 @@ class LinearLayer : public Layer {
 			//Tensor weightsBroadcast(newValues, {input_features, output_features}, "cuda");
 			//cout << "Weights: " << (*weights).toString() << endl;
 			//(*weights).transpose();
-			//cout << "Transposed Weights: " << (*weights).toString() << endl;
+			cout << "Transposed Weights: " << (*weights).toString() << endl;
+			cout << "Return Weights Device: " << (*weights).getDevice() << endl;
+
 			//cout << "Transpose Weights Shape " << (*weights).getDimensionsString() << endl;
 			*weights = *weights + x; 
+			cout << "Return Weights Device: " << (*weights).getDevice() << endl;
+
 			//(*weights).transpose();
 			//cout << "X Shape " << (x).getDimensionsString() << endl;
 
 			//cout << "New Weights: " << (*weights).toString() << endl;
 			//cout << "Biases: " << (*bias).toString() << endl;
-			vector<float> biasValues(x.getTotalValues() / input_features);
-			for (int i = 0; i < output_features; i++) {
-				for (int j = 0; j < input_features; j++) {
-       	 			biasValues[i] += x[{i, j}]; 
-    			}
-			}
-			Tensor d_bias(biasValues, {output_features, 1}, "cuda"); 
+			if (x.getTotalValues() != 1) {
+				vector<float> biasValues(x.getTotalValues() / input_features);
+				for (int i = 0; i < output_features; i++) {
+					for (int j = 0; j < input_features; j++) {
+						biasValues[i] += x[{i, j}]; 
+					}
+				}
+				Tensor d_bias(biasValues, {output_features, 1}, "cuda"); 
+				*bias = *bias + (d_bias);
 
-			*bias = *bias + (d_bias);
-			//cout << "New Biases: " << (*bias).toString() << endl;
+			} else {
+				*bias = *bias + (x);
+			}
+
+			cout << "New Biases: " << (*bias).toString() << endl;
+			cout << "Return Weights Device: " << (*weights).getDevice() << endl;
 
 			Tensor returnWeights = *weights;
+			cout << "Return Weights Device: " << returnWeights.getDevice() << endl;
+
 			returnWeights.transpose();
-			//gammaPrev.transpose();
+			cout << "Return Weights Device: " << returnWeights.getDevice() << endl;
+			cout << "Return GamaPrev Device: " << gammaPrev.getDevice() << endl;
+
 			Tensor outputGradient = returnWeights * gammaPrev;
 			
-			//cout << "Output Gradient: " << (outputGradient).toString() << endl;
-
+			cout << "Output Gradient: " << (outputGradient).toString() << endl;
+			inputs.transpose();
 			return outputGradient;
 		}
 

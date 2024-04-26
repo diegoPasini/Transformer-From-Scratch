@@ -28,12 +28,17 @@ class Sigmoid : public Layer {
                 sum_of_elems += x.getValues()[i];
             }
             output = 1 / (1 + exp(-sum_of_elems));
-            return Tensor({output}, {1} , "cuda");
+            return Tensor({output}, {1}, "cuda");
         }   
 
 
         Tensor backward(Tensor gammaPrev) {
             gammaPrev = output * (1-output) * gammaPrev;
-            return gammaPrev;
+            vector<float> values = gammaPrev.getValues();
+            vector<float> newValues(input_features);
+            for (int i = 0; i < input_features; i++) {
+                newValues[i] = values[0];
+            }
+            return Tensor(newValues, {1, input_features}, "cuda");;
         }
 };

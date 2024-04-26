@@ -33,21 +33,20 @@ class LinearLayer : public Layer {
 			// X ~ U(-√(k), √(k))
 			uniform_real_distribution<float> distr(-sqrt(k), sqrt(k));
 			vector<float> weightsTemp(output_features * input_features);
-			for (int i = 0; i < output_features; i++) {
+			for (int i = 0; i < output_features * input_features; i++) {
 				float generated = distr(gen);
-				for(int j = 0; j < input_features; j++) {
-					weightsTemp[i * input_features + j] = generated;
-				}
+				weightsTemp[i] = generated;
+				
 			}
-			vector<int> dims = {input_features, output_features};
-			weights = make_unique<Tensor>(weightsTemp, dims, string("cuda"));
+			vector<int> dims = {output_features, input_features};
+			weights = make_unique<Tensor>(weightsTemp, dims, "cuda");
 			vector<float> biasTemp(output_features);
 
 			for (int i = 0; i < output_features; i++) {
 				biasTemp[i] = distr(gen);
 			}
 			vector<int> dim = {output_features, 1};
-			bias = make_unique<Tensor>(biasTemp, dim, string("cuda"));
+			bias = make_unique<Tensor>(biasTemp, dim, "cuda");
 		}
 
 
@@ -66,6 +65,12 @@ class LinearLayer : public Layer {
 
 		Tensor forward(Tensor x) {
 			this->inputs = x;
+			//cout << "Weigts: " << (x).toString() << endl;
+			//cout << "Device :" << x.getDevice() << endl;
+			//x.transpose();
+			//cout << "Weigts: " << (*weights).toString() << endl;
+			//cout << "Device :" << (*weights).getDevice() << endl;
+
 			x = (*weights * x);
 			//cout << x.toString() << endl;
 			//cout << (*bias).toString() << endl;
@@ -75,20 +80,58 @@ class LinearLayer : public Layer {
 		}
 
 		Tensor backward(Tensor gammaPrev) {
-			//cout << "Value: " << (-1.0f * learning_rate * multiply(gammaPrev, inputs)).toString() << endl;
-			Tensor newGamma = multiply(gammaPrev, inputs);
+			//inputs.reshape({input_features, 1});
+			//inputs.transpose();
+			// cout << "Input: " << inputs.toString() << endl;
+			// cout << "Inputs Shape: " << inputs.getDimensionsString() << endl;
+			// cout << "Gamma Shape: " << gammaPrev.getDimensionsString() << endl;
+			// cout << "GammaPrev: " << gammaPrev.toString() << endl;
+			inputs.transpose();
+			Tensor newGamma = gammaPrev * inputs;
+			//cout << "New Gamma Tranpose: " << newGamma.toString() << endl;
 			Tensor x = -1.0f * learning_rate * newGamma;
-			vector<float> newValues(x.getTotalValues() * output_features);
-			vector<float> originalValues = x.getValues();
-			for(int i = 0; i < x.getTotalValues(); i++) {
-				for (int j = 0; j < output_features; j++) {
-					newValues[i * output_features + j] = originalValues[i];
-				}
+			//x.transpose();
+			//cout << "X: " << x.toString() << endl;
+			//cout << "X Device " << (x).getDevice() << endl;
+
+			//cout << "X: " << x.toString() << endl;
+			//vector<float> newValues(x.getTotalValues() * output_features);
+			//vector<float> originalValues = x.getValues();
+			// for(int i = 0; i < x.getTotalValues(); i++) {
+			// 	for (int j = 0; j < output_features; j++) {
+			// 		newValues[i * output_features + j] = originalValues[i];
+			// 	}
+			// }
+			//Tensor weightsBroadcast(newValues, {input_features, output_features}, "cuda");
+			//cout << "Weights: " << (*weights).toString() << endl;
+			//(*weights).transpose();
+			//cout << "Transposed Weights: " << (*weights).toString() << endl;
+			//cout << "Transpose Weights Shape " << (*weights).getDimensionsString() << endl;
+			*weights = *weights + x; 
+			//(*weights).transpose();
+			//cout << "X Shape " << (x).getDimensionsString() << endl;
+
+			//cout << "New Weights: " << (*weights).toString() << endl;
+			//cout << "Biases: " << (*bias).toString() << endl;
+			vector<float> biasValues(x.getTotalValues() / input_features);
+			for (int i = 0; i < output_features; i++) {
+				for (int j = 0; j < input_features; j++) {
+       	 			biasValues[i] += x[{i, j}]; 
+    			}
 			}
-			Tensor weightsBroadcast(newValues, {input_features, output_features}, "cuda");
-			*weights = *weights + weightsBroadcast; 
-			*bias = *bias + (-1.0f * learning_rate * gammaPrev);
-			return newGamma;
+			Tensor d_bias(biasValues, {output_features, 1}, "cuda"); 
+
+			*bias = *bias + (d_bias);
+			//cout << "New Biases: " << (*bias).toString() << endl;
+
+			Tensor returnWeights = *weights;
+			returnWeights.transpose();
+			//gammaPrev.transpose();
+			Tensor outputGradient = returnWeights * gammaPrev;
+			
+			//cout << "Output Gradient: " << (outputGradient).toString() << endl;
+
+			return outputGradient;
 		}
 
 		string toStringWeights() {

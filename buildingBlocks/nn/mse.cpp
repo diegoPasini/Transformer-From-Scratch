@@ -21,6 +21,6 @@ public:
     }
 
     float backward_loss(float predicted, float actual) {
-        return actual - predicted;
+        return predicted - actual;
     } 
 };

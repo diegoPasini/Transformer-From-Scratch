@@ -24,13 +24,13 @@ int main() {
     vector<float> actualValues = {0, 1, 1, 0};
     vector<int> actualDims = {4};
     Tensor actual(actualValues, actualDims, "cuda");
-    float lr = 0.1f;
-    LinearLayer lin1(2, 1, lr);
-    LinearLayer lin2(1, 1, lr);
+    float lr = 2.0f;
+    LinearLayer lin1(2, 2, lr);
+    LinearLayer lin2(2, 1, lr);
     Sigmoid sig(1);
     MSE mse_loss(1);
     int epochs = 10;
-    int iterations = 3000;
+    int iterations = 100;
     //vector<int> datasetDims2 = {4, 2};
     for (int i = 0; i < epochs; i++) {
         float lossAvg = 0;
@@ -38,6 +38,7 @@ int main() {
         for (int j = 0; j < iterations; j++) {
             //cout << "Iteration: " << i << endl;
             int index = distrib(gen);
+            //int index = 3;           
             //cout << "Index: " << index << endl;
             //vector<int> datasetDims2 = {4, 2};
             float val1 = dataset[{index, 0}];
@@ -56,11 +57,12 @@ int main() {
             // } else {
             //     prediction = 0;
             // }
-            float loss = mse_loss.forward_loss({prediction},{actual[{index}]});
+            float loss = mse_loss.forward_loss({prediction},{actualValues[index]});
             lossAvg += loss;
+
             //cout << "Loss: " << loss << endl;
-            float dloss = mse_loss.backward_loss(prediction, actual[{index}]);
-            Tensor gamma({dloss}, {1}, "cuda");
+            float dloss = mse_loss.backward_loss(prediction, actualValues[index]);
+            Tensor gamma({dloss}, {1, 1}, "cuda");
             Tensor y = sig.backward(gamma);
             //cout << lin2.toStringWeights() << endl;
             y = lin2.backward(y);
@@ -68,8 +70,20 @@ int main() {
             //cout << y.toString() << endl;
             y = lin1.backward(y);
         }
-        cout << "Loss: " << lossAvg / iterations << endl;
-        
+
+        cout << "Loss: " << lossAvg/iterations << endl;
+    }
+
+    // After training, predicting XOR values for all inputs
+    vector<float> inputs = {0, 0, 0, 1, 1, 0, 1, 1};
+    cout << "Predicting XOR values:" << endl;
+    for (int i = 0; i < 4; i++) {
+        Tensor input({inputs[i * 2], inputs[i * 2 + 1]}, {2, 1}, "cuda");
+        Tensor x = lin1.forward(input);
+        x = lin2.forward(x);
+        x = sig.forward(x);
+        float prediction = x[{0, 0}];
+        cout << "Input: " << inputs[i * 2] << ", " << inputs[i * 2 + 1] << " - Prediction: " << prediction << endl;
     }
 
 

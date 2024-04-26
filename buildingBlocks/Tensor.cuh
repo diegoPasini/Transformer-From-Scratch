@@ -34,7 +34,8 @@ class Tensor {
         vector<int> getDimensions() const;
         string getDevice() const;
         vector<float> getValues();
-        
+        void transpose();
+
 
         // Operation to reshape the tensor
         void reshape(const vector<int>& newDims);

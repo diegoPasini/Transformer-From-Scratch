@@ -42,12 +42,12 @@ __global__ void scaleMatrix(float* a, float* b, float scalar, int n, int m){
 __global__ void multiplyMatrices(float *d_A, float *d_B, float *d_C, int M, int N, int P) {
         int row = blockIdx.y * blockDim.y + threadIdx.y;
         int col = blockIdx.x * blockDim.x + threadIdx.x;
-        if(row < M && col < P) {
+        if(row < N && col < P) {
                 float sum = 0.0f;
 
                 // compute the dot product for each row of A and col of B
-                for(int i = 0; i < N; ++i) {
-                        sum += d_A[row * N + i] * d_B[i * P + col];
+                for(int i = 0; i < M; ++i) {
+                        sum += d_A[row * M + i] * d_B[i * P + col];
                 }
                 d_C[row * P + col] = sum;
         }

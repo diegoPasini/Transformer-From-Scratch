@@ -125,6 +125,36 @@ void Tensor::reshape(const vector<int>& newDims) {
     nDimensions = newDims.size();
 }
 
+void Tensor::transpose() {
+    if (nDimensions != 2) {
+        throw std::runtime_error("Transpose currently supports only 2D tensors.");
+    }
+
+    vector<float> transposedValues(totalVals);
+    int rows = dimensions[0];
+    int cols = dimensions[1];
+
+    // Transpose operation on CPU
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            transposedValues[j * rows + i] = getValues()[i * cols + j];
+        }
+    }
+
+    // Update the internal state
+    values = transposedValues;  // Update the values with the transposed data
+    swap(dimensions[0], dimensions[1]);  // Swap the dimension sizes
+
+    // If using CUDA, update the device data
+    if (device == "cuda") {
+        cudaFree(valuesCuda);  // Free the old device memory
+
+        // Allocate new device memory and copy the transposed data
+        cudaMalloc((void**)&valuesCuda, totalVals * sizeof(float));
+        cudaMemcpy(valuesCuda, transposedValues.data(), totalVals * sizeof(float), cudaMemcpyHostToDevice);
+    }
+}
+
 // Accessor functions
 int Tensor::getTotalValues() const {
     return totalVals;
@@ -455,7 +485,7 @@ Tensor operator*(Tensor a, Tensor b) {
         }
     }
 
-    if((a.nDimensions == 1 && b.nDimensions == 1) || (a.dimensions[a.nDimensions - 1] ==  1 && b.dimensions[b.nDimensions - 1] == 1)) {
+    if((a.nDimensions == 1 && b.nDimensions == 1) || (a.dimensions[a.nDimensions - 1] ==  1 && b.dimensions[b.nDimensions - 1] == 1 && b.dimensions[b.nDimensions - 2] == a.dimensions[a.nDimensions - 2])) {
         if(a.device == "cuda" && b.device == "cuda") {
             //cout << "Used Dot Product" << endl;
             vector<float> result(1);
@@ -484,15 +514,25 @@ Tensor operator*(Tensor a, Tensor b) {
         for (int i = 0; i < a.nDimensions; i++) {
             totalOutputVals *= resultingDims[i];
         }
-        vector<float> outputValues(totalOutputVals);
         int n = a.dimensions[a.nDimensions - 2];
         int m = a.dimensions[a.nDimensions - 1]; 
         int p = b.dimensions[b.nDimensions - 1];
-        int batchSize = totalOutputVals / (m*p);
+        // cout << "m: " << m << endl;
+        // cout << "n: " << n << endl;
+        // cout << "p: " << p << endl;
+        int aTotalElements = 1;
+            for (int i = 0; i < a.dimensions.size(); i++) {
+                aTotalElements *= a.dimensions[i];
+            }
+        int batchSize = aTotalElements / (n * m);
+        //cout << "batch_size: " << batchSize << endl;
+
+        vector<float> outputValues(n * p * batchSize);
+
         if(a.device == "cuda" && b.device == "cuda") {
             float* zeros_device;
-            cudaMalloc((void**)&zeros_device,batchSize * m * p * sizeof(float));
-            cudaMemset(zeros_device, 0, batchSize * m * p * sizeof(float));
+            cudaMalloc((void**)&zeros_device,batchSize * n * p * sizeof(float));
+            cudaMemset(zeros_device, 0, batchSize * n * p * sizeof(float));
             //c_device[0] = 1;
             for (int batch = 0; batch < batchSize; batch++) {
                 float* a_batch = a.valuesCuda + batch * (n * m);
@@ -501,10 +541,10 @@ Tensor operator*(Tensor a, Tensor b) {
 
                 matrix_multiplication(a_batch, b_batch, c_batch, n, m, p);
             }
-            float* host_values = (float *)malloc(m * p * batchSize * sizeof(float));
-            cudaMemcpy(host_values, zeros_device, m * p * batchSize * sizeof(float), cudaMemcpyDeviceToHost);
-            vector<float> newVals(m* p * batchSize, 0);
-            for (int i = 0; i <  m* p * batchSize; i++) {
+            float* host_values = (float *)malloc(n * p * batchSize * sizeof(float));
+            cudaMemcpy(host_values, zeros_device, n * p * batchSize * sizeof(float), cudaMemcpyDeviceToHost);
+            vector<float> newVals(n* p * batchSize, 0);
+            for (int i = 0; i < n * p * batchSize; i++) {
                 newVals[i] = host_values[i];
             }
             Tensor x(newVals, resultingDims, string("cuda"));
@@ -512,16 +552,17 @@ Tensor operator*(Tensor a, Tensor b) {
 
 
         } else {
+            cout << "Doing Multiplication" << endl;
             for (int batch = 0; batch < batchSize; batch++) {
-                for (int i = 0; i < resultingDims[a.nDimensions - 2]; i++) {
-                    for (int j = 0; j < resultingDims[a.nDimensions - 1]; j++) {
+                for (int i = 0; i < n; i++) { // Iterate over rows of 'a'.
+                    for (int j = 0; j < p; j++) { // Iterate over columns of 'b'.
                         float sum = 0.0;
-                        for (int k = 0; k < a.dimensions[a.nDimensions - 1]; k++) {
-                            int aIndex = batch * (a.dimensions[a.nDimensions - 2] * a.dimensions[a.nDimensions - 1]) + i * a.dimensions[a.nDimensions - 1] + k;
-                            int bIndex = batch * (b.dimensions[b.nDimensions - 2] * b.dimensions[b.nDimensions - 1]) + k * b.dimensions[b.nDimensions - 1] + j;
+                        for (int k = 0; k < m; k++) { // 'm' is the shared dimension.
+                            int aIndex = batch * (n * m) + i * m + k;
+                            int bIndex = batch * (m * p) + k * p + j;
                             sum += a.values[aIndex] * b.values[bIndex];
                         }
-                        int outputIndex = batch * (a.dimensions[a.nDimensions - 2] * b.dimensions[b.nDimensions - 1]) + i * b.dimensions[b.nDimensions - 1] + j;
+                        int outputIndex = batch * (n * p) + i * p + j;
                         outputValues[outputIndex] = sum;
                     }
                 }

@@ -24,13 +24,13 @@ int main() {
     vector<float> actualValues = {0, 1, 1, 0};
     vector<int> actualDims = {4};
     Tensor actual(actualValues, actualDims, "cuda");
-    float lr = 2.0f;
+    float lr = 0.35f;
     LinearLayer lin1(2, 2, lr);
     LinearLayer lin2(2, 1, lr);
     Sigmoid sig(1);
     MSE mse_loss(1);
     int epochs = 10;
-    int iterations = 100;
+    int iterations = 1000;
     //vector<int> datasetDims2 = {4, 2};
     for (int i = 0; i < epochs; i++) {
         float lossAvg = 0;

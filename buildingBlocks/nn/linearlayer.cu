@@ -25,11 +25,11 @@ class LinearLayer : public Layer {
 		Tensor inputs;
 		Tensor outputs;
 		
-		void intialize_weights() {
+		void initialize_weights() {
 			float k = 1 / float(input_features); 
 			random_device rd;  // a seed source for the random number engine
     		mt19937 gen(rd());
-			// First we intialize the weights based on a uniform distribution 
+			// First we initialize the weights based on a uniform distribution 
 			// X ~ U(-√(k), √(k))
 			uniform_real_distribution<float> distr(-sqrt(k), sqrt(k));
 			vector<float> weightsTemp(output_features * input_features);
@@ -55,7 +55,7 @@ class LinearLayer : public Layer {
 		: learning_rate(learning_rate) { 
 			this->input_features = input_features;
 			this->output_features = output_features;
-			intialize_weights();
+			initialize_weights();
 		}
 
 		// Destructor

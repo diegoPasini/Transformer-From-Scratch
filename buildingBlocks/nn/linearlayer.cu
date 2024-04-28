@@ -19,7 +19,7 @@ class LinearLayer : public Layer {
 		int output_features;
 		float learning_rate;
 		// Number of rows equal to the number of neurons in the previous layer.
-		// Number of columns equal tot he number of neurons in the next layer.
+		// Number of columns equal to the number of neurons in the next layer.
 		unique_ptr<Tensor> weights;
     	unique_ptr<Tensor> bias;
 		Tensor inputs;
@@ -36,8 +36,8 @@ class LinearLayer : public Layer {
 			for (int i = 0; i < output_features * input_features; i++) {
 				float generated = distr(gen);
 				weightsTemp[i] = generated;
-				
 			}
+			
 			vector<int> dims = {output_features, input_features};
 			weights = make_unique<Tensor>(weightsTemp, dims, "cuda");
 			vector<float> biasTemp(output_features);

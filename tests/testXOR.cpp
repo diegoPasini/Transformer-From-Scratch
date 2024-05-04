@@ -24,43 +24,31 @@ int main() {
     vector<float> actualValues = {0, 1, 1, 0};
     vector<int> actualDims = {4};
     Tensor actual(actualValues, actualDims, "cuda");
-    float lr = 0.35f;
-    LinearLayer lin1(2, 2, lr);
-    LinearLayer lin2(2, 1, lr);
-    Sigmoid sig(2);
+    float lr = 0.75f;
+    LinearLayer lin1(2, 4, lr);
+    LinearLayer lin2(4, 4, lr);
+
+    LinearLayer lin3(4, 1, lr);
+    Sigmoid sig(1);
     BCEWithLogitsLoss loss(1);
-    int epochs = 1;
-    int iterations = 1;
-    //vector<int> datasetDims2 = {4, 2};
+    int epochs = 10;
+    int iterations = 1000;
     for (int i = 0; i < epochs; i++) {
         float lossAvg = 0;
         cout << "Epoch: " << i << endl;
         for (int j = 0; j < iterations; j++) {
-            //cout << "Iteration: " << i << endl;
-            //int index = distrib(gen);
             vector<float> predictions(4);
             for (int k = 0; k < 4; k++) {
-                //int index = 3;           
-                //cout << "Index: " << k << endl;
-                //vector<int> datasetDims2 = {4, 2};
                 float val1 = dataset[{k, 0}];
                 float val2 = dataset[{k, 1}];
                 Tensor input({val1, val2}, {2, 1}, "cuda");
                 Tensor x = lin1.forward(input);
-                cout << x.toString()<< endl;
-                x = sig.forward(x);
-                //cout << x.toString()<< endl;
-                //x = lin3.forward(x);
-
                 x = lin2.forward(x);
+                x = lin3.forward(x);
+                x = sig.forward(x);
+
                 float prediction = x[{0, 0}];
                 predictions[k] = prediction;
-                //cout << "Prediction: " << prediction << endl;
-                // if(prediction > 0.5){
-                //     prediction = 1;
-                // } else {
-                //     prediction = 0;
-                // }
             }
 
             float lossValue = loss.forward_loss(predictions, actualValues);
@@ -71,13 +59,9 @@ int main() {
             for (int l = 0; l < 4; l++) {
                 float dloss = loss.backward_loss(predictions[l], actualValues[l]);
                 Tensor gamma({dloss}, {1, 1}, "cuda");
-                //cout << gamma.toString() << endl;
-                Tensor y = lin2.backward(gamma);
-                //y = lin3.backward(y);
-                //cout << lin2.toStringWeights() << endl;
-                y = sig.backward(y);
-                //cout << lin2.toStringWeights() << endl;
-                //cout << y.toString() << endl;
+                Tensor y = sig.backward(gamma);
+                y = lin3.backward(y);
+                y = lin2.backward(y);
                 y = lin1.backward(y);
             }
         }
@@ -91,9 +75,9 @@ int main() {
     for (int i = 0; i < 4; i++) {
         Tensor input({inputs[i * 2], inputs[i * 2 + 1]}, {2, 1}, "cuda");
         Tensor x = lin1.forward(input);
-        x = sig.forward(x);
-        //x = lin3.forward(x);
         x = lin2.forward(x);
+        x = lin3.forward(x);
+        x = sig.forward(x);
         float prediction = x[{0, 0}];
         cout << "Input: " << inputs[i * 2] << ", " << inputs[i * 2 + 1] << " - Prediction: " << prediction << endl;
     }    

@@ -17,7 +17,7 @@ public:
             sum += pow(( predicted[i] - actual[i]), 2);
         }
         sum /= n;
-        return sum;
+        return susm;
     }
 
     float backward_loss(float predicted, float actual) {

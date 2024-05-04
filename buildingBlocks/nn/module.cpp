@@ -1,9 +1,9 @@
 #include <vector>
 #include "../Tensor.cuh"
-#include "Layer.cpp"
+#include "Layer.h"
 #include <memory>
 #include "losses.cpp"
-#include "loss.cpp"
+#include "loss.h"
 
 using namespace std;
 
@@ -16,12 +16,15 @@ class Module {
 
     public:
 
-        void forward() {
-            // each layer will have an input
+        void forward(Tensor input) {
+            std::unique_ptr<Tensor> temp = std::make_unique<Tensor>(layers[0]->forward(input));
+            for (int i = 1; i < layers.size(); i++) {
+                temp = std::make_unique<Tensor>(layers[i]->forward(*temp));
+            }
         }
 
         void backward() {
-            // forward();
+            
             // Tensor loss_input = loss.forward_loss(Tensor loss)
             // layers[layers.size() - 1].backward(loss_input);
             // for (int i = layers.size() - 1; i >= 0; i--) {

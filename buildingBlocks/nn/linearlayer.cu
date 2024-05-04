@@ -83,7 +83,7 @@ class LinearLayer : public Layer {
 		Tensor backward(Tensor gammaPrev) {
 			inputs.transpose();
 			Tensor newGamma = gammaPrev * inputs;
-			Tensor dW = -1.0f * newGamma;
+			Tensor dW = -1.0f  * learning_rate * newGamma;
 
 			Tensor db;
 			if (dW.getTotalValues() != 1) {
@@ -100,27 +100,27 @@ class LinearLayer : public Layer {
 				*bias = *bias + (dW);
 			}
 
-			// Mometum
-			if (V_dw) {
-				*V_dw = ((beta_1) * *V_dw) + ((1 - beta_1) * dW);
-				*V_db = ((beta_1) * *V_db) + ((1 - beta_1) * db);
-				*S_dw = ((beta_2) * *S_dw) + ((1 - beta_2) * multiply(dW, dW));
-				*S_db = ((beta_2) * *S_db) + ((1 - beta_2) * multiply(db, db));
+			// Momentum
+			// if (V_dw) {
+			// 	*V_dw = ((beta_1) * *V_dw) + ((1 - beta_1) * dW);
+			// 	*V_db = ((beta_1) * *V_db) + ((1 - beta_1) * db);
+			// 	*S_dw = ((beta_2) * *S_dw) + ((1 - beta_2) * multiply(dW, dW));
+			// 	*S_db = ((beta_2) * *S_db) + ((1 - beta_2) * multiply(db, db));
 				
 
-			} else {
-				*V_dw = 
-				*V_db = 
-				*S_dw = 
-				*S_db = 
-			}
+			// } else {
+			// 	*V_dw = 
+			// 	*V_db = 
+			// 	*S_dw = 
+			// 	*S_db = 
+			// }
 
 			// RMS Prop 
 
 
 
-			*weights = *weights + *V_dw; 
-			*bias = *bias + (d_bias);
+			*weights = *weights + dW; 
+			*bias = *bias + (db);
 
 			//cout << "New Biases: " << (*bias).toString() << endl;
 			//cout << "Return Weights Device: " << (*weights).getDevice() << endl;

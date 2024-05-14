@@ -106,8 +106,6 @@ class LinearLayer : public Layer {
 				*V_db = ((beta_1) * *V_db) + ((1 - beta_1) * db);
 				*S_dw = ((beta_2) * *S_dw) + ((1 - beta_2) * multiply(dW, dW));
 				*S_db = ((beta_2) * *S_db) + ((1 - beta_2) * multiply(db, db));
-				
-
 			} else {
 				*V_dw = 
 				*V_db = 

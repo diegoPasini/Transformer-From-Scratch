@@ -65,7 +65,6 @@ int main() {
                 y = lin1.backward(y);
             }
         }
-
         cout << "Loss: " << lossAvg/iterations << endl;
     }
 

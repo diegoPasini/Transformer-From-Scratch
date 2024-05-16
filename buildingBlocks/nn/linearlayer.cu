@@ -30,6 +30,7 @@ class LinearLayer : public Layer {
 		unique_ptr<Tensor> V_db;
 		unique_ptr<Tensor> S_dw;
 		unique_ptr<Tensor> S_db;
+		int t = 0;
 
 		float beta_1 = 0.9;
 		float beta_2 = 0.999;
@@ -83,14 +84,14 @@ class LinearLayer : public Layer {
 		Tensor backward(Tensor gammaPrev) {
 			inputs.transpose();
 			Tensor newGamma = gammaPrev * inputs;
-			Tensor dW = -1.0f  * learning_rate * newGamma;
+			Tensor dW = -1.0f  * newGamma;
 
 			Tensor db;
 			if (dW.getTotalValues() != 1) {
 				vector<float> biasValues(dW.getTotalValues() / input_features);
 				for (int i = 0; i < output_features; i++) {
 					for (int j = 0; j < input_features; j++) {
-						biasValues[i] += x[{i, j}]; 
+						biasValues[i] += inputs[{i, j}]; 
 					}
 				}
 				db = Tensor(biasValues, {output_features, 1}, "cuda"); 
@@ -107,32 +108,24 @@ class LinearLayer : public Layer {
 				*S_dw = ((beta_2) * *S_dw) + ((1 - beta_2) * multiply(dW, dW));
 				*S_db = ((beta_2) * *S_db) + ((1 - beta_2) * multiply(db, db));
 			} else {
-				*V_dw = 
-				*V_db = 
-				*S_dw = 
-				*S_db = 
+				*V_dw = ((1 - beta_1) * dW);
+				*V_db = ((1 - beta_1) * db);
+				*S_dw = ((1 - beta_2) * multiply(dW, dW));
+				*S_db = ((1 - beta_2) * multiply(db, db));
 			}
-			// Momentum
-			// if (V_dw) {
-			// 	*V_dw = ((beta_1) * *V_dw) + ((1 - beta_1) * dW);
-			// 	*V_db = ((beta_1) * *V_db) + ((1 - beta_1) * db);
-			// 	*S_dw = ((beta_2) * *S_dw) + ((1 - beta_2) * multiply(dW, dW));
-			// 	*S_db = ((beta_2) * *S_db) + ((1 - beta_2) * multiply(db, db));
-				
 
-			// } else {
-			// 	*V_dw = 
-			// 	*V_db = 
-			// 	*S_dw = 
-			// 	*S_db = 
-			// }
+			// Now Apply 1 - Beta Normalization
+			*V_dw = (1 / (1 - pow(beta_1, t))) * *V_dw;
+			*V_db = (1 / (1 - pow(beta_1, t))) * *V_db;
+			*S_dw = (1 / (1 - pow(beta_2, t))) * *S_dw;
+			*S_db = (1 / (1 - pow(beta_2, t))) * *S_db;
 
-			// RMS Prop 
+			Tensor weightTerm = - learning_rate * divide(*V_dw, epsilon + sqrt_tensor(*S_dw));
+			Tensor biasTerm = - learning_rate * divide(*V_db, epsilon + sqrt_tensor(*S_db));
+			*weights = *weights + weightTerm; 
+			*bias = *bias + (biasTerm);
 
-
-
-			*weights = *weights + dW; 
-			*bias = *bias + (db);
+			t++;
 
 			//cout << "New Biases: " << (*bias).toString() << endl;
 			//cout << "Return Weights Device: " << (*weights).getDevice() << endl;

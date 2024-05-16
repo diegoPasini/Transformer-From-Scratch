@@ -53,7 +53,6 @@ __global__ void multiplyMatrices(float *d_A, float *d_B, float *d_C, int M, int 
         }
 }
 
-
 // Sum of elements in matrix
 __global__ void sumMatrix(float* a, float aSum, int M, int N){
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
@@ -67,7 +66,31 @@ __global__ void multiplyMatrixElements(float *a, float *b, float *c, int n, int 
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
     if (j < n && i < m) {
-        c[i * n + j]= a[i * n + j] + b[i * n + j];
+        c[i * n + j]= a[i * n + j] * b[i * n + j];
+    }
+}
+
+__global__ void divideMatrixElements(float *a, float *b, float *c, int n, int m) {
+        int i = blockIdx.x * blockDim.x + threadIdx.x;
+		int j = blockIdx.y * blockDim.y + threadIdx.y;
+		if (j < n && i < m) {
+			c[i * n + j]= a[i * n + j] / b[i * n + j];
+		}
+}
+
+__global__ void sqrt_matrix(float* a, float* b, int n, int m) {
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	int j = blockIdx.y * blockDim.y + threadIdx.y;
+	if (j < n && i < m) {
+        b[i * n + j]= sqrt(a[i * n + j]);
+    }
+}
+
+__global__ void matrix_scalar_addition(float* a, float* b, float c, int n, int m) {
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	int j = blockIdx.y * blockDim.y + threadIdx.y;
+	if (j < n && i < m) {
+        b[i * n + j]= a[i * n + j] + c;
     }
 }
 
@@ -104,5 +127,27 @@ namespace MatrixOperations {
 		dim3 gridSize((n + blockSize.x - 1) / blockSize.x, (m + blockSize.y - 1) / blockSize.y);
 		multiplyMatrixElements<<<gridSize, blockSize>>>(a, b, c, n, m);
 		cudaDeviceSynchronize();
+	}
+
+	void divide_matrices(float* a, float* b, float* c, int n, int m)  {
+		dim3 blockSize(16, 16); 
+		dim3 gridSize((n + blockSize.x - 1) / blockSize.x, (m + blockSize.y - 1) / blockSize.y);
+		divideMatrixElements<<<gridSize, blockSize>>>(a, b, c, n, m);
+		cudaDeviceSynchronize();
+	}
+
+	void sqrtMatrix(float* a, float* b, int n, int m) {
+		dim3 blockSize(16, 16);
+		dim3 gridSize((n + blockSize.x - 1) / blockSize.x, (m + blockSize.y - 1) / blockSize.y);
+		sqrt_matrix<<<gridSize, blockSize>>>(a, b, n, m);
+		cudaDeviceSynchronize();
+	}
+
+	void matrixScalarAddition(float* a, float* b, float scalar, int n, int m) {
+		dim3 blockSize(16, 16);
+		dim3 gridSize((n + blockSize.x - 1) / blockSize.x, (m + blockSize.y - 1) / blockSize.y);
+		matrix_scalar_addition<<<gridSize, blockSize>>>(a, b, scalar, n, m);
+		cudaDeviceSynchronize();
+
 	}
 }

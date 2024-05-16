@@ -47,6 +47,8 @@ class Tensor {
 
         // Matrix Addition
         friend Tensor operator+(Tensor a, Tensor b);
+        friend Tensor operator+(float x, Tensor a);
+
 
         // Matrix Scaling
         friend Tensor operator*(float a, Tensor b);
@@ -73,6 +75,10 @@ class Tensor {
         friend vector<int> getShapeBroadcasting(Tensor a, Tensor b);
 
         friend Tensor multiply(Tensor a, Tensor b); 
+        
+        friend Tensor divide(Tensor a, Tensor b); 
+
+        friend Tensor sqrt_tensor(Tensor a); 
 
 
         // Get mean

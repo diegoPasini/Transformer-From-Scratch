@@ -13,12 +13,13 @@ class XORModel(nn.Module):
         # First layer: 2 input features (XOR inputs), 2 hidden nodes
         self.layer1 = nn.Linear(2, 2)
         # Activation function between layers
-        self.activation = nn.Sigmoid()
         # Output layer: 2 inputs from hidden layer, 1 output
         self.layer2 = nn.Linear(2, 1)
+        self.activation = nn.Sigmoid()
+
 
     def forward(self, x):
-        x = self.activation(self.layer1(x))
+        x = self.activation((self.layer1(x)))
         x = self.layer2(x)
         return x
 

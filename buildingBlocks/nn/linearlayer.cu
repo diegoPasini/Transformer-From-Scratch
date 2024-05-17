@@ -26,15 +26,16 @@ class LinearLayer : public Layer {
     	unique_ptr<Tensor> bias;
 		Tensor inputs;
 		Tensor outputs;
-		unique_ptr<Tensor> V_dw;
-		unique_ptr<Tensor> V_db;
-		unique_ptr<Tensor> S_dw;
-		unique_ptr<Tensor> S_db;
+		Tensor V_dw_prev;
+		Tensor V_db_prev;
+		Tensor S_dw_prev;
+		Tensor S_db_prev;
+		bool intialized = false;
 		int t = 0;
 
 		float beta_1 = 0.9;
 		float beta_2 = 0.999;
-		float epsilon = 10^(-8);
+		float epsilon = pow(10, -8);
 		
 		void initialize_weights() {
 			float k = 1 / float(input_features); 
@@ -84,48 +85,51 @@ class LinearLayer : public Layer {
 		Tensor backward(Tensor gammaPrev) {
 			inputs.transpose();
 			Tensor newGamma = gammaPrev * inputs;
-			Tensor dW = -1.0f  * newGamma;
+			Tensor dW = newGamma;
 
-			Tensor db;
-			if (dW.getTotalValues() != 1) {
-				vector<float> biasValues(dW.getTotalValues() / input_features);
-				for (int i = 0; i < output_features; i++) {
-					for (int j = 0; j < input_features; j++) {
-						biasValues[i] += inputs[{i, j}]; 
-					}
-				}
-				db = Tensor(biasValues, {output_features, 1}, "cuda"); 
+			Tensor db = gammaPrev;
+			cout << "db String " << db.toString() << endl;
+			cout << "dW String" << dW.toString() << endl;
+	 		// Mometum
+			Tensor V_dw;
+			Tensor V_db;
+			Tensor S_dw;
+			Tensor S_db;
+		
+			if (intialized) {
+				V_dw = ((beta_1) * V_dw_prev) + ((1 - beta_1) * dW);
+				V_db = ((beta_1) * V_db_prev) + ((1 - beta_1) * db);
+				S_dw = ((beta_2) * S_dw_prev) + ((1 - beta_2) * multiply(dW, dW));
+				S_db = ((beta_2) * S_db_prev) + ((1 - beta_2) * multiply(db, db));
+				V_dw = (1 / (1 - pow(beta_1, t))) * V_dw;
+				V_db = (1 / (1 - pow(beta_1, t))) * V_db;
+				S_dw = (1 / (1 - pow(beta_2, t))) * S_dw;
+				S_db = (1 / (1 - pow(beta_2, t))) * S_db;
+				cout << "V_dw "<< V_dw.toString() << endl;
+				cout << "S_dw "<< S_dw.toString() << endl;
 
 			} else {
-				db = dW;
-				*bias = *bias + (dW);
-			}
-
-			// Mometum
-			if (V_dw) {
-				*V_dw = ((beta_1) * *V_dw) + ((1 - beta_1) * dW);
-				*V_db = ((beta_1) * *V_db) + ((1 - beta_1) * db);
-				*S_dw = ((beta_2) * *S_dw) + ((1 - beta_2) * multiply(dW, dW));
-				*S_db = ((beta_2) * *S_db) + ((1 - beta_2) * multiply(db, db));
-			} else {
-				*V_dw = ((1 - beta_1) * dW);
-				*V_db = ((1 - beta_1) * db);
-				*S_dw = ((1 - beta_2) * multiply(dW, dW));
-				*S_db = ((1 - beta_2) * multiply(db, db));
-			}
-
-			// Now Apply 1 - Beta Normalization
-			*V_dw = (1 / (1 - pow(beta_1, t))) * *V_dw;
-			*V_db = (1 / (1 - pow(beta_1, t))) * *V_db;
-			*S_dw = (1 / (1 - pow(beta_2, t))) * *S_dw;
-			*S_db = (1 / (1 - pow(beta_2, t))) * *S_db;
-
-			Tensor weightTerm = - learning_rate * divide(*V_dw, epsilon + sqrt_tensor(*S_dw));
-			Tensor biasTerm = - learning_rate * divide(*V_db, epsilon + sqrt_tensor(*S_db));
+				cout << (1 - beta_1) << endl;
+				vector<float> values1((*weights).getTotalValues(), 0);
+				vector<float> values2((*bias).getTotalValues(), 0);
+				V_dw = Tensor(values1, (*weights).getDimensions(), string("cuda"));
+				V_db = Tensor(values2, (*bias).getDimensions(), string("cuda"));
+				S_dw = Tensor(values1, (*weights).getDimensions(), string("cuda"));
+				S_db = Tensor(values2, (*bias).getDimensions(), string("cuda"));
+				intialized = true;
+			}			
+			//cout << (-learning_rate * divide(V_dw, (epsilon + sqrt_tensor(S_dw)))).toString() << endl;
+			Tensor weightTerm = - learning_rate * divide(V_dw, epsilon + sqrt_tensor(S_dw));
+			Tensor biasTerm = - learning_rate * divide(V_db, epsilon + sqrt_tensor(S_db));
 			*weights = *weights + weightTerm; 
 			*bias = *bias + (biasTerm);
 
 			t++;
+
+			V_dw_prev = V_dw;
+			V_db_prev = V_db;
+			S_dw_prev = S_dw;
+			S_db_prev = S_db;
 
 			//cout << "New Biases: " << (*bias).toString() << endl;
 			//cout << "Return Weights Device: " << (*weights).getDevice() << endl;
@@ -139,7 +143,7 @@ class LinearLayer : public Layer {
 
 			Tensor outputGradient = returnWeights * gammaPrev;
 			
-			//cout << "Output Gradient: " << (outputGradient).toString() << endl;
+			cout << "Output Gradient: " << (outputGradient).toString() << endl;
 			inputs.transpose();
 			return outputGradient;
 		}

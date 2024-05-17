@@ -453,13 +453,13 @@ Tensor operator*(float x, Tensor a) {
         cudaMalloc((void**)&device_arr, a.totalVals * sizeof(float));
         cudaMemset(device_arr, 0, a.totalVals * sizeof(float));
         matrix_scaling(a.valuesCuda, device_arr, x, a.getDimensions()[0], a.getDimensions()[1]);
-        if (cudaPeekAtLastError() != cudaSuccess) {
-            cudaFree(device_arr);  // Free memory on error
-            throw std::runtime_error("CUDA error: " + std::string(cudaGetErrorString(cudaGetLastError())));
+        float* host_values = (float *)malloc(a.totalVals * sizeof(float));
+        cudaMemcpy(host_values, device_arr, a.totalVals * sizeof(float), cudaMemcpyDeviceToHost);
+        vector<float> newVals(a.totalVals, 0);
+        for (int i = 0; i < a.totalVals; i++) {
+            newVals[i] = host_values[i];
         }
-        //float* host_values = (float *)malloc(m * p * batchSize * sizeof(float));
-        //cudaMemcpy(host_values, zeros_device, m* p * batchSize  * sizeof(float), cudaMemcpyDeviceToHost);
-        return Tensor(device_arr, a.getDimensions(), string("cuda"));
+        return Tensor(newVals, a.getDimensions(), string("cuda"));
     } else {
         vector<float> valuesCopy(a.values);
         for(int i = 0; i < a.totalVals; i++) {
@@ -480,9 +480,14 @@ Tensor operator+(float x, Tensor a) {
             cudaFree(device_arr);  // Free memory on error
             throw std::runtime_error("CUDA error: " + std::string(cudaGetErrorString(cudaGetLastError())));
         }
-        //float* host_values = (float *)malloc(m * p * batchSize * sizeof(float));
-        //cudaMemcpy(host_values, zeros_device, m* p * batchSize  * sizeof(float), cudaMemcpyDeviceToHost);
-        return Tensor(device_arr, a.getDimensions(), string("cuda"));
+        float* host_values = (float *)malloc(a.totalVals * sizeof(float));
+        cudaMemcpy(host_values, device_arr, a.totalVals * sizeof(float), cudaMemcpyDeviceToHost);
+        vector<float> newVals(a.totalVals, 0);
+        for (int i = 0; i < a.totalVals; i++) {
+            newVals[i] = host_values[i];
+        }
+        Tensor x(newVals, a.getDimensions(), string("cuda"));
+        return x;
     } else {
         vector<float> valuesCopy(a.values);
         for(int i = 0; i < a.totalVals; i++) {
@@ -883,7 +888,13 @@ Tensor sqrt_tensor(Tensor a) {
             cudaFree(device_arr);
             throw std::runtime_error("CUDA error: " + std::string(cudaGetErrorString(cudaGetLastError())));
         }
-        return Tensor(device_arr, a.getDimensions(), string("cuda"));
+        float* host_values = (float *)malloc(a.totalVals * sizeof(float));
+        cudaMemcpy(host_values, device_arr, a.totalVals * sizeof(float), cudaMemcpyDeviceToHost);
+        vector<float> newVals(a.totalVals, 0);
+        for (int i = 0; i < a.totalVals; i++) {
+            newVals[i] = host_values[i];
+        }
+        return Tensor(newVals, a.getDimensions(), string("cuda"));
     } else {
         vector<float> resultingValues = a.getValues();
         for (int i = 0; i < a.getTotalValues(); i++) {

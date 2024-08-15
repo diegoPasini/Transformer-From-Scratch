@@ -9,6 +9,9 @@ using namespace std;
 void addMatrices(const vector<vector<float>>& a, const vector<vector<float>>& b, vector<vector<float>>& c) {
     int m = a.size();
     int n = a[0].size();
+    if (m != b.size() || n != b[0].size()) {
+        throw invalid_argument("Matrices of sizes " + to_string(m) + "x" + to_string(n) + " and " + to_string(b.size()) + "x" + to_string(b[0].size()) + " are not compatible for addition");
+    }
     c.resize(m, vector<float>(n));
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
@@ -23,6 +26,9 @@ void multiplyMatrices(const vector<vector<float>>& a, const vector<vector<float>
     int m = a.size();
     int n = a[0].size();
     int p = b[0].size();
+    if (n != b.size()) {
+        throw invalid_argument("Matrices of sizes " + to_string(m) + "x" + to_string(n) + " and " + to_string(b.size()) + "x" + to_string(b[0].size()) + " are not compatible for multiplication");
+    }
     c.resize(m, vector<float>(p, 0.0f));
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < p; j++) {

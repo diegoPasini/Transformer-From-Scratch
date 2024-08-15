@@ -6,6 +6,8 @@
 
 using namespace std;
 
+// Download Dataset at https://www.kaggle.com/datasets/hojjatk/mnist-dataset?resource=download
+
 uint32_t read_int(ifstream &file) {
     uint32_t num = 0;
     file.read(reinterpret_cast<char *>(&num), sizeof(num));

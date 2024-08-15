@@ -145,6 +145,7 @@
     "cfenv": "cpp",
     "cinttypes": "cpp",
     "typeindex": "cpp",
-    "format": "cpp"
+    "format": "cpp",
+    "stack": "cpp"
   }
 }

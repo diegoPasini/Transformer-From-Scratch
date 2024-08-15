@@ -3,6 +3,8 @@
 #include <iostream>
 #include <cmath>
 #include <stdexcept>
+#include "functions.cpp"
+#include "matrix_operations.cpp"
 
 using namespace std;
 
@@ -72,6 +74,39 @@ public:
         }
 
         return outputs;
+    }
+
+    vector<float> backward(const vector<float>& d_outputs, float learning_rate) {
+        t++;
+
+        vector<vector<float>> d_weights;
+        vector<vector<float>> d_inputs; // this should just be a row vector, but we're matrix multiplying to get it. In the return statement we only return the first row.
+        vector<vector<float>> d_outputs_2D = {d_outputs};
+
+        broadcastMultiply(d_outputs, inputs, d_weights);
+        multiplyMatrices(d_outputs_2D, weights, d_inputs);
+        vector<float> d_bias = d_outputs;        
+
+        for (int i = 0; i < output_features; ++i) {
+            for (int j = 0; j < input_features; ++j) {
+                m_weights[i][j] = beta1 * m_weights[i][j] + (1 - beta1) * d_weights[i][j];
+                v_weights[i][j] = beta2 * v_weights[i][j] + (1 - beta2) * d_weights[i][j] * d_weights[i][j];
+
+                float m_hat = m_weights[i][j] / (1 - pow(beta1, t));
+                float v_hat = v_weights[i][j] / (1 - pow(beta2, t));
+
+                weights[i][j] -= learning_rate * m_hat / (sqrt(v_hat) + epsilon);
+            }
+            m_bias[i] = beta1 * m_bias[i] + (1 - beta1) * d_bias[i];
+            v_bias[i] = beta2 * v_bias[i] + (1 - beta2) * d_bias[i] * d_bias[i];
+
+            float m_hat_bias = m_bias[i] / (1 - pow(beta1, t));
+            float v_hat_bias = v_bias[i] / (1 - pow(beta2, t));
+
+            bias[i] -= learning_rate * m_hat_bias / (sqrt(v_hat_bias) + epsilon);
+        }
+
+        return d_inputs[0];
     }
 
     void update_weights(const vector<vector<float> >& d_weights, const vector<float>& d_bias, float learning_rate) {

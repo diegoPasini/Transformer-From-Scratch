@@ -39,6 +39,20 @@ void multiplyMatrices(const vector<vector<float> >& a, const vector<vector<float
     }
 }
 
+// Broadcasted position multiplication
+// first input is column vector, second input is row vector
+// the column vector is "copied" right and the row vector is "copied" down
+void broadcastMultiply(const vector<float>& a, const vector<float>& b, vector<vector<float> >& c) {
+    int m = a.size();
+    int n = b.size();
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            c[i][j] = a[i] * b[j];
+        }
+    }
+}
+
+
 void print2DMatrix(const vector<vector<float> >& a) {
     for (int i = 0; i < a.size(); i++) {
         for (int j = 0; j < a[0].size(); j++) {

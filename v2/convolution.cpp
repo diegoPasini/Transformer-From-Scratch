@@ -37,7 +37,7 @@ private:
         }
     }
 
-    vector<vector<float> > pad_input(const vector<vector<float> >& input) {
+    vector<vector<float>> pad_input(const vector<vector<float> >& input) {
         int padded_size = input.size() + 2 * padding;
         vector<vector<float> > padded_input(padded_size, vector<float>(padded_size, 0.0f));
 
@@ -56,13 +56,13 @@ public:
         initialize_kernels();
     }
 
-    vector<vector<vector<float> > > forward(const vector<vector<vector<float> > >& input) {
+    vector<vector<vector<float>>> forward(const vector<vector<vector<float>>>& input) {
         int input_height = input[0].size();
         int input_width = input[0][0].size();
         int output_height = (input_height - kernel_size + 2 * padding) / stride + 1;
         int output_width = (input_width - kernel_size + 2 * padding) / stride + 1;
 
-        vector<vector<vector<float> > > output(output_channels, vector<vector<float> >(output_height, vector<float>(output_width, 0.0f)));
+        vector<vector<vector<float>>> output(output_channels, vector<vector<float> >(output_height, vector<float>(output_width, 0.0f)));
 
         for (int oc = 0; oc < output_channels; ++oc) {
             for (int oh = 0; oh < output_height; ++oh) {

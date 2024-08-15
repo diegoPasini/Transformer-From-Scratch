@@ -50,64 +50,121 @@ int main() {
     int num_epochs = 10;
     float learning_rate = 0.001;
 
-    // for (int epoch = 0; epoch < num_epochs; ++epoch) {
-    //     cout << "Starting epoch " << epoch + 1 << " of " << num_epochs << endl;
-    //     for (int batch_index = 0; batch_index < train_images.size() / batch_size; ++batch_index) {
-    //         cout << "Processing batch " << batch_index + 1 << " of " << train_images.size() / batch_size << endl;
+    for (int epoch = 0; epoch < num_epochs; ++epoch) {
+        cout << "Starting epoch " << epoch + 1 << " of " << num_epochs << endl;
+        for (int batch_index = 0; batch_index < train_images.size() / batch_size; ++batch_index) {
+            cout << "Processing Training Batch " << batch_index + 1 << " of " << train_images.size() / batch_size << endl;
             
-    //         vector<vector<float>> batch_images = get_batch(train_images, batch_size, batch_index);
-    //         vector<uint8_t> batch_labels = get_batch_labels(train_labels, batch_size, batch_index);
+            vector<vector<float>> batch_images = get_batch(train_images, batch_size, batch_index);
+            vector<uint8_t> batch_labels = get_batch_labels(train_labels, batch_size, batch_index);
 
-    //         vector<vector<vector<vector<float>>>> conv1_output(batch_size);
-    //         for (int i = 0; i < batch_size; ++i) {
-    //             vector<vector<vector<float>>> input_image(1, vector<vector<float>>(28, vector<float>(28)));
-    //             for (int j = 0; j < 28; ++j) {
-    //                 for (int k = 0; k < 28; ++k) {
-    //                     input_image[0][j][k] = batch_images[i][j * 28 + k];
-    //                 }
-    //             }
-    //             conv1_output[i] = conv1.forward(input_image);
-    //             for (auto& channel : conv1_output[i]) {
-    //                 relu(channel);
-    //             }
-    //         }
+            vector<vector<vector<vector<float>>>> conv1_output(batch_size);
+            for (int i = 0; i < batch_size; ++i) {
+                vector<vector<vector<float>>> input_image(1, vector<vector<float>>(28, vector<float>(28)));
+                for (int j = 0; j < 28; ++j) {
+                    for (int k = 0; k < 28; ++k) {
+                        input_image[0][j][k] = batch_images[i][j * 28 + k];
+                    }
+                }
+                conv1_output[i] = conv1.forward(input_image);
+                for (auto& channel : conv1_output[i]) {
+                    relu(channel);
+                }
+            }
 
-    //         vector<vector<vector<vector<float>>>> conv2_output(batch_size);
-    //         for (int i = 0; i < batch_size; ++i) {
-    //             conv2_output[i] = conv2.forward(conv1_output[i]);
-    //             for (auto& channel : conv2_output[i]) {
-    //                 relu(channel);
-    //             }
-    //         }
+            vector<vector<vector<vector<float>>>> conv2_output(batch_size);
+            for (int i = 0; i < batch_size; ++i) {
+                conv2_output[i] = conv2.forward(conv1_output[i]);
+                for (auto& channel : conv2_output[i]) {
+                    relu(channel);
+                }
+            }
 
-    //         vector<vector<float>> flattened_output(batch_size, vector<float>(16 * 28 * 28));
-    //         for (int i = 0; i < batch_size; ++i) {
-    //             int index = 0;
-    //             for (const auto& channel : conv2_output[i]) {
-    //                 for (const auto& row : channel) {
-    //                     for (float val : row) {
-    //                         flattened_output[i][index++] = val;
-    //                     }
-    //                 }
-    //             }
-    //         }
+            vector<vector<float>> flattened_output(batch_size, vector<float>(16 * 28 * 28));
+            for (int i = 0; i < batch_size; ++i) {
+                int index = 0;
+                for (const auto& channel : conv2_output[i]) {
+                    for (const auto& row : channel) {
+                        for (float val : row) {
+                            flattened_output[i][index++] = val;
+                        }
+                    }
+                }
+            }
 
-    //         vector<vector<float>> fc1_output = fc1.forward(flattened_output);
-    //         relu(fc1_output);
-    //         vector<vector<float>> fc2_output = fc2.forward(fc1_output);
-    //         softmax(fc2_output);
+            vector<vector<float>> fc1_output = fc1.forward(flattened_output);
+            relu(fc1_output);
+            vector<vector<float>> fc2_output = fc2.forward(fc1_output);
+            softmax(fc2_output);
 
-    //         // NEED TO FINISH BACKPROP IMPLEMENTATION HERE:
-    //         // vector<vector<float>> d_weights_fc2(10, vector<float>(128, 0.0f));
-    //         // vector<float> d_bias_fc2(10, 0.0f);
-    //         // vector<vector<float>> d_weights_fc1(128, vector<float>(16 * 28 * 28, 0.0f));
-    //         // vector<float> d_bias_fc1(128, 0.0f);
+            // BACKPROPOGATION
+            cout << "Starting Backpropogation" << endl;
+            vector<vector<float>> d_fc2_output(batch_size, vector<float>(10));
+            vector<vector<float>> d_fc1_output(batch_size, vector<float>(128));
+            vector<vector<float>> d_flattened_output(batch_size, vector<float>(16 * 28 * 28));
 
-    //         // fc2.update_weights(d_weights_fc2, d_bias_fc2, learning_rate);
-    //         // fc1.update_weights(d_weights_fc1, d_bias_fc1, learning_rate);
-    //     }
-    //     cout << "Epoch " << epoch + 1 << " completed." << endl;
-    // }
+            float total_loss = 0.0f;
+            for (int i = 0; i < batch_size; ++i) {
+                vector<float> label_one_hot(10, 0.0f);
+                label_one_hot[batch_labels[i]] = 1.0f;
+                auto [loss, gradient] = softmaxLoss(fc2_output[i], label_one_hot);
+                d_fc2_output[i] = gradient;
+                total_loss += loss;
+            }
+            float average_loss = total_loss / batch_size;
+            cout << "Average Loss for batch: " << average_loss << endl;
+
+            vector<vector<float>> d_weights_fc2;
+            vector<float> d_bias_fc2;
+            broadcastMultiply(d_fc2_output[0], fc1_output[0], d_weights_fc2);
+            d_bias_fc2 = d_fc2_output[0];
+
+            // fc2.update_weights(d_weights_fc2, d_bias_fc2, learning_rate);
+
+            for (int i = 0; i < batch_size; ++i) {
+                d_fc1_output[i] = fc2.backward(d_fc2_output[i], learning_rate);
+            }
+
+            vector<vector<float>> d_weights_fc1;
+            vector<float> d_bias_fc1;
+            broadcastMultiply(d_fc1_output[0], flattened_output[0], d_weights_fc1);
+            d_bias_fc1 = d_fc1_output[0];
+
+            // fc1.update_weights(d_weights_fc1, d_bias_fc1, learning_rate);
+
+            for (int i = 0; i < batch_size; ++i) {
+                d_flattened_output[i] = fc1.backward(d_fc1_output[i], learning_rate);
+            }
+
+            // Backpropagation for conv2
+            vector<vector<vector<vector<float>>>> d_conv2_output(batch_size);
+            for (int i = 0; i < batch_size; ++i) {
+                d_conv2_output[i] = vector<vector<vector<float>>>(16, vector<vector<float>>(28, vector<float>(28, 0.0f)));
+                int index = 0;
+                for (int c = 0; c < 16; ++c) {
+                    for (int h = 0; h < 28; ++h) {
+                        for (int w = 0; w < 28; ++w) {
+                            d_conv2_output[i][c][h][w] = d_flattened_output[i][index++];
+                        }
+                    }
+                }
+                for (auto& channel : d_conv2_output[i]) {
+                    relu_backward(channel, conv2_output[i][&channel - &d_conv2_output[i][0]]);
+                }
+                d_conv2_output[i] = conv2.backward(d_conv2_output[i], conv1_output[i]);
+            }
+
+            // Backpropagation for conv1
+            vector<vector<vector<vector<float>>>> d_conv1_output(batch_size);
+            for (int i = 0; i < batch_size; ++i) {
+                for (auto& channel : d_conv2_output[i]) {
+                    relu_backward(channel, conv1_output[i][&channel - &d_conv2_output[i][0]]);
+                }
+                d_conv1_output[i] = conv1.backward(d_conv2_output[i], vector<vector<vector<float>>>(1, vector<vector<float>>(28, vector<float>(28))));
+            }
+        }
+        cout << "Epoch " << epoch + 1 << " completed." << endl;
+    }
 
     // Testing loop
     cout << "RUNNING TEST LOOP" << endl;

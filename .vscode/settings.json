@@ -146,6 +146,8 @@
     "cinttypes": "cpp",
     "typeindex": "cpp",
     "format": "cpp",
-    "stack": "cpp"
+    "stack": "cpp",
+    "__verbose_abort": "cpp",
+    "execution": "cpp"
   }
 }

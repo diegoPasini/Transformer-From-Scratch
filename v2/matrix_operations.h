@@ -8,5 +8,6 @@
 void addMatrices(const std::vector<std::vector<float>> &a, const std::vector<std::vector<float>> &b, std::vector<std::vector<float>> &c);
 void multiplyMatrices(const std::vector<std::vector<float>> &a, const std::vector<std::vector<float>> &b, std::vector<std::vector<float>> &c);
 void print2DMatrix(const std::vector<std::vector<float>> &a);
+void broadcastMultiply(const std::vector<float>& a, const std::vector<float>& b, std::vector<std::vector<float>>& c);
 
 #endif 

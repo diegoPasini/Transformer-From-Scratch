@@ -5,7 +5,7 @@
 using namespace std;
 
 // RELU
-void relu(vector<vector<float> >& a) {
+void relu(vector<vector<float>>& a) {
     int m = a.size();
     int n = a[0].size();
     for (int i = 0; i < m; i++) {
@@ -15,8 +15,21 @@ void relu(vector<vector<float> >& a) {
     }
 }
 
+// RELU Backward
+void relu_backward(vector<vector<float>>& d_output, const vector<vector<float>>& input) {
+    int m = d_output.size();
+    int n = d_output[0].size();
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            if (input[i][j] <= 0) {
+                d_output[i][j] = 0;
+            }
+        }
+    }
+}
+
 // Softmax
-void softmax(vector<vector<float> >& a) {
+void softmax(vector<vector<float>>& a) {
     int m = a.size();
     int n = a[0].size();
     for (int i = 0; i < m; i++) {
@@ -33,7 +46,7 @@ void softmax(vector<vector<float> >& a) {
 
 // Softmax Loss and Gradient
 // true labels need to be normalized
-pair<float, vector<float> > softmaxLoss(const vector<float>& a, const vector<float>& y) {
+pair<float, vector<float>> softmaxLoss(const vector<float>& a, const vector<float>& y) {
     int n = a.size();
     if (n != y.size()) {
         throw invalid_argument("Dimensions of input and output do not match.");

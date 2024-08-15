@@ -87,6 +87,52 @@ public:
         return output;
     }
 
+    vector<vector<vector<float>>> backward(const vector<vector<vector<float>>>& d_output, const vector<vector<vector<float>>>& input) {
+        int input_height = input[0].size();
+        int input_width = input[0][0].size();
+        int output_height = d_output[0].size();
+        int output_width = d_output[0][0].size();
+
+        vector<vector<vector<float>>> d_input(input_channels, vector<vector<float>>(input_height, vector<float>(input_width, 0.0f)));
+        vector<vector<vector<vector<float>>>> d_kernels(output_channels, vector<vector<vector<float>>>(input_channels, vector<vector<float>>(kernel_size, vector<float>(kernel_size, 0.0f))));
+        vector<float> d_biases(output_channels, 0.0f);
+
+        for (int oc = 0; oc < output_channels; ++oc) {
+            for (int oh = 0; oh < output_height; ++oh) {
+                for (int ow = 0; ow < output_width; ++ow) {
+                    float d_out_val = d_output[oc][oh][ow];
+                    d_biases[oc] += d_out_val;
+                    for (int ic = 0; ic < input_channels; ++ic) {
+                        for (int kh = 0; kh < kernel_size; ++kh) {
+                            for (int kw = 0; kw < kernel_size; ++kw) {
+                                int ih = oh * stride + kh - padding;
+                                int iw = ow * stride + kw - padding;
+                                if (ih >= 0 && ih < input_height && iw >= 0 && iw < input_width) {
+                                    d_kernels[oc][ic][kh][kw] += d_out_val * input[ic][ih][iw];
+                                    d_input[ic][ih][iw] += d_out_val * kernels[oc][ic][kh][kw];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Update kernels and biases
+        for (int oc = 0; oc < output_channels; ++oc) {
+            biases[oc] -= d_biases[oc];
+            for (int ic = 0; ic < input_channels; ++ic) {
+                for (int kh = 0; kh < kernel_size; ++kh) {
+                    for (int kw = 0; kw < kernel_size; ++kw) {
+                        kernels[oc][ic][kh][kw] -= d_kernels[oc][ic][kh][kw];
+                    }
+                }
+            }
+        }
+
+        return d_input;
+    }
+
     void print_kernels() const {
         for (const auto& kernel : kernels) {
             for (const auto& channel : kernel) {

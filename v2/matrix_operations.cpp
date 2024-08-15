@@ -23,12 +23,18 @@ void addMatrices(const vector<vector<float> >& a, const vector<vector<float> >& 
 
 // Matrix Multiplication
 // Not CUDA
+// Not CUDA
 void multiplyMatrices(const vector<vector<float> >& a, const vector<vector<float> >& b, vector<vector<float> >& c) {
     int m = a.size();
+    if (m == 0) throw invalid_argument("Matrix 'a' is empty");
     int n = a[0].size();
+    if (n == 0) throw invalid_argument("Matrix 'a' has no columns");
+    int b_rows = b.size();
+    if (b_rows == 0) throw invalid_argument("Matrix 'b' is empty");
     int p = b[0].size();
-    if (n != b.size()) {
-        throw invalid_argument("Matrices of sizes " + to_string(m) + "x" + to_string(n) + " and " + to_string(b.size()) + "x" + to_string(b[0].size()) + " are not compatible for multiplication");
+    if (p == 0) throw invalid_argument("Matrix 'b' has no columns");
+    if (n != b_rows) {
+        throw invalid_argument("Matrices of sizes " + to_string(m) + "x" + to_string(n) + " and " + to_string(b_rows) + "x" + to_string(p) + " are not compatible for multiplication");
     }
     c.resize(m, vector<float>(p, 0.0f));
     for (int i = 0; i < m; i++) {
@@ -46,6 +52,7 @@ void multiplyMatrices(const vector<vector<float> >& a, const vector<vector<float
 void broadcastMultiply(const vector<float>& a, const vector<float>& b, vector<vector<float> >& c) {
     int m = a.size();
     int n = b.size();
+    c.resize(m, vector<float>(n));
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
             c[i][j] = a[i] * b[j];

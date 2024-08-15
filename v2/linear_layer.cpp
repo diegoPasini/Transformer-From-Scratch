@@ -3,8 +3,8 @@
 #include <iostream>
 #include <cmath>
 #include <stdexcept>
-#include "functions.cpp"
-#include "matrix_operations.cpp"
+#include "functions.h"
+#include "matrix_operations.h"
 
 using namespace std;
 
@@ -79,18 +79,23 @@ public:
     vector<float> backward(const vector<float>& d_outputs, float learning_rate) {
         t++;
 
-        vector<vector<float>> d_weights;
-        vector<vector<float>> d_inputs; // this should just be a row vector, but we're matrix multiplying to get it. In the return statement we only return the first row.
+        vector<vector<float>> d_weights(output_features, vector<float>(input_features, 1.0f));
+        vector<vector<float>> d_inputs(1, vector<float>(input_features)); // this should just be a row vector, but we're matrix multiplying to get it. In the return statement we only return the first row.
         vector<vector<float>> d_outputs_2D = {d_outputs};
-
+        // cout << "Got to Broadcast Multiply " << endl;
         broadcastMultiply(d_outputs, inputs, d_weights);
         multiplyMatrices(d_outputs_2D, weights, d_inputs);
+        // cout << "Finished Multiply Matrices " << endl;
         vector<float> d_bias = d_outputs;        
 
         for (int i = 0; i < output_features; ++i) {
             for (int j = 0; j < input_features; ++j) {
+                // cout << "m_weights[" << i << "][" << j << "] before: " << m_weights[i][j] << endl;
+                // cout << "v_weights[" << i << "][" << j << "] before: " << v_weights[i][j] << endl;
                 m_weights[i][j] = beta1 * m_weights[i][j] + (1 - beta1) * d_weights[i][j];
                 v_weights[i][j] = beta2 * v_weights[i][j] + (1 - beta2) * d_weights[i][j] * d_weights[i][j];
+                // cout << "m_weights[" << i << "][" << j << "] after: " << m_weights[i][j] << endl;
+                // cout << "v_weights[" << i << "][" << j << "] after: " << v_weights[i][j] << endl;
 
                 float m_hat = m_weights[i][j] / (1 - pow(beta1, t));
                 float v_hat = v_weights[i][j] / (1 - pow(beta2, t));
@@ -105,6 +110,8 @@ public:
 
             bias[i] -= learning_rate * m_hat_bias / (sqrt(v_hat_bias) + epsilon);
         }
+
+        // cout << "Finished Input Features " << endl;
 
         return d_inputs[0];
     }

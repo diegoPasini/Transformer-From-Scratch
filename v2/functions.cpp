@@ -32,6 +32,7 @@ void softmax(vector<vector<float>>& a) {
 }
 
 // Softmax Loss and Gradient
+// true labels need to be normalized
 pair<float, vector<float>> softmaxLoss(const vector<float>& a, const vector<float>& y) {
     int n = a.size();
     if (n != y.size()) {

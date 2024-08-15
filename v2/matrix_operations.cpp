@@ -1,3 +1,4 @@
+#include "matrix_operations.h"
 #include <iostream>
 #include <vector>
 #include <cmath>
@@ -39,7 +40,7 @@ void multiplyMatrices(const vector<vector<float> >& a, const vector<vector<float
     }
 }
 
-void print2DMatrix(const vector<vector<float> >& a) {
+void print2DMatrix(const vector<vector<float>> & a) {
     for (int i = 0; i < a.size(); i++) {
         for (int j = 0; j < a[0].size(); j++) {
             cout << a[i][j] << " ";

@@ -54,13 +54,13 @@ public:
         initialize_weights();
     }
 
-    vector<vector<float>> forward(const vector<vector<float>>& input) {
+    vector<vector<float> > forward(const vector<vector<float> >& input) {
         int batch_size = input.size();
         if (input[0].size() != input_features) {
             throw invalid_argument("Input size does not match input features.");
         }
 
-        vector<vector<float>> outputs(batch_size, vector<float>(output_features));
+        vector<vector<float> > outputs(batch_size, vector<float>(output_features));
 
         for (int b = 0; b < batch_size; ++b) {
             for (int i = 0; i < output_features; ++i) {

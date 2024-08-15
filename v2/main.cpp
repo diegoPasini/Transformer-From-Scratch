@@ -46,9 +46,13 @@ int main() {
     LinearLayer fc1(16 * 28 * 28, 128); // Fully connected layer, input size 16*28*28, output size 128
     LinearLayer fc2(128, 10); // Fully connected layer, input size 128, output size 10
 
-    int batch_size = 32;
+    int batch_size = 256;
     int num_epochs = 10;
     float learning_rate = 0.001;
+
+
+    // For Adam:
+    int t = 1;
 
     for (int epoch = 0; epoch < num_epochs; ++epoch) {
         cout << "Starting epoch " << epoch + 1 << " of " << num_epochs << endl;
@@ -102,7 +106,7 @@ int main() {
             vector<vector<float>> d_fc2_output(batch_size, vector<float>(10));
             vector<vector<float>> d_fc1_output(batch_size, vector<float>(128));
             vector<vector<float>> d_flattened_output(batch_size, vector<float>(16 * 28 * 28));
-
+        
             float total_loss = 0.0f;
             for (int i = 0; i < batch_size; ++i) {
                 vector<float> label_one_hot(10, 0.0f);
@@ -122,7 +126,7 @@ int main() {
             // fc2.update_weights(d_weights_fc2, d_bias_fc2, learning_rate);
 
             for (int i = 0; i < batch_size; ++i) {
-                d_fc1_output[i] = fc2.backward(d_fc2_output[i], learning_rate);
+                d_fc1_output[i] = fc2.backward(d_fc2_output[i], learning_rate, t);
             }
 
             vector<vector<float>> d_weights_fc1;
@@ -133,7 +137,7 @@ int main() {
             // fc1.update_weights(d_weights_fc1, d_bias_fc1, learning_rate);
 
             for (int i = 0; i < batch_size; ++i) {
-                d_flattened_output[i] = fc1.backward(d_fc1_output[i], learning_rate);
+                d_flattened_output[i] = fc1.backward(d_fc1_output[i], learning_rate, t);
             }
 
             // Backpropagation for conv2
@@ -162,6 +166,8 @@ int main() {
                 }
                 d_conv1_output[i] = conv1.backward(d_conv2_output[i], vector<vector<vector<float>>>(1, vector<vector<float>>(28, vector<float>(28))));
             }
+
+            ++t;
         }
         cout << "Epoch " << epoch + 1 << " completed." << endl;
     }

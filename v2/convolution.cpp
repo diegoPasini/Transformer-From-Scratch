@@ -12,14 +12,15 @@ private:
     int kernel_size;
     int stride;
     int padding;
-    vector<vector<vector<vector<float> > > > kernels; // [output_channels][input_channels][kernel_size][kernel_size]
+    vector<vector<vector<vector<float>>>> kernels; // [output_channels][input_channels][kernel_size][kernel_size]
     vector<float> biases;
 
     void initialize_kernels() {
+        float k = sqrt(2.0f / input_channels);
         random_device rd;
         mt19937 gen(rd());
-        uniform_real_distribution<float> distr(-1.0, 1.0);
-
+        normal_distribution<float> distr(0.0f, k);
+        
         kernels.resize(output_channels, vector<vector<vector<float> > >(input_channels, vector<vector<float> >(kernel_size, vector<float>(kernel_size))));
         for (int oc = 0; oc < output_channels; ++oc) {
             for (int ic = 0; ic < input_channels; ++ic) {

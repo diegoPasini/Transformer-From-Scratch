@@ -12,7 +12,7 @@ private:
     int kernel_size;
     int stride;
     int padding;
-    vector<vector<vector<vector<float>>>> kernels; // [output_channels][input_channels][kernel_size][kernel_size]
+    vector<vector<vector<vector<float> > > > kernels; // [output_channels][input_channels][kernel_size][kernel_size]
     vector<float> biases;
 
     void initialize_kernels() {
@@ -20,7 +20,7 @@ private:
         mt19937 gen(rd());
         uniform_real_distribution<float> distr(-1.0, 1.0);
 
-        kernels.resize(output_channels, vector<vector<vector<float>>>(input_channels, vector<vector<float>>(kernel_size, vector<float>(kernel_size))));
+        kernels.resize(output_channels, vector<vector<vector<float> > >(input_channels, vector<vector<float> >(kernel_size, vector<float>(kernel_size))));
         for (int oc = 0; oc < output_channels; ++oc) {
             for (int ic = 0; ic < input_channels; ++ic) {
                 for (int i = 0; i < kernel_size; ++i) {
@@ -37,9 +37,9 @@ private:
         }
     }
 
-    vector<vector<float>> pad_input(const vector<vector<float>>& input) {
+    vector<vector<float> > pad_input(const vector<vector<float> >& input) {
         int padded_size = input.size() + 2 * padding;
-        vector<vector<float>> padded_input(padded_size, vector<float>(padded_size, 0.0f));
+        vector<vector<float> > padded_input(padded_size, vector<float>(padded_size, 0.0f));
 
         for (int i = 0; i < input.size(); ++i) {
             for (int j = 0; j < input[0].size(); ++j) {
@@ -56,13 +56,13 @@ public:
         initialize_kernels();
     }
 
-    vector<vector<vector<float>>> forward(const vector<vector<vector<float>>>& input) {
+    vector<vector<vector<float> > > forward(const vector<vector<vector<float> > >& input) {
         int input_height = input[0].size();
         int input_width = input[0][0].size();
         int output_height = (input_height - kernel_size + 2 * padding) / stride + 1;
         int output_width = (input_width - kernel_size + 2 * padding) / stride + 1;
 
-        vector<vector<vector<float>>> output(output_channels, vector<vector<float>>(output_height, vector<float>(output_width, 0.0f)));
+        vector<vector<vector<float> > > output(output_channels, vector<vector<float> >(output_height, vector<float>(output_width, 0.0f)));
 
         for (int oc = 0; oc < output_channels; ++oc) {
             for (int oh = 0; oh < output_height; ++oh) {

@@ -6,7 +6,7 @@ using namespace std;
 
 // Matrix Addition
 // Not CUDA
-void addMatrices(const vector<vector<float>>& a, const vector<vector<float>>& b, vector<vector<float>>& c) {
+void addMatrices(const vector<vector<float> >& a, const vector<vector<float> >& b, vector<vector<float> >& c) {
     int m = a.size();
     int n = a[0].size();
     if (m != b.size() || n != b[0].size()) {
@@ -22,7 +22,7 @@ void addMatrices(const vector<vector<float>>& a, const vector<vector<float>>& b,
 
 // Matrix Multiplication
 // Not CUDA
-void multiplyMatrices(const vector<vector<float>>& a, const vector<vector<float>>& b, vector<vector<float>>& c) {
+void multiplyMatrices(const vector<vector<float> >& a, const vector<vector<float> >& b, vector<vector<float> >& c) {
     int m = a.size();
     int n = a[0].size();
     int p = b[0].size();
@@ -39,7 +39,7 @@ void multiplyMatrices(const vector<vector<float>>& a, const vector<vector<float>
     }
 }
 
-void print2DMatrix(const vector<vector<float>>& a) {
+void print2DMatrix(const vector<vector<float> >& a) {
     for (int i = 0; i < a.size(); i++) {
         for (int j = 0; j < a[0].size(); j++) {
             cout << a[i][j] << " ";

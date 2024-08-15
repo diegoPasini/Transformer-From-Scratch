@@ -12,7 +12,7 @@ int main() {
     string train_images_path = "../MNIST Dataset/t10k-images-idx3-ubyte/t10k-images-idx3-ubyte";
     string train_labels_path = "../MNIST Dataset/train-labels-idx1-ubyte/train-labels-idx1-ubyte";
     
-    vector<vector<float>> train_images = read_mnist_images(train_images_path);
+    vector<vector<float> > train_images = read_mnist_images(train_images_path);
     vector<uint8_t> train_labels = read_mnist_labels(train_labels_path);
 
     cout << "Number of training images: " << train_images.size() << endl;
@@ -23,7 +23,7 @@ int main() {
     LinearLayer fc1(16 * 28 * 28, 128); // Fully connected layer, input size 16*28*28, output size 128
     LinearLayer fc2(128, 10); // Fully connected layer, input size 128, output size 10
 
-    vector<vector<vector<float>>> input_image(1, vector<vector<float>>(28, vector<float>(28)));
+    vector<vector<vector<float> > > input_image(1, vector<vector<float> >(28, vector<float>(28)));
     for (int i = 0; i < 28; ++i) {
         for (int j = 0; j < 28; ++j) {
             input_image[0][i][j] = train_images[0][i * 28 + j];
@@ -31,27 +31,30 @@ int main() {
     }
 
     auto conv1_output = conv1.forward(input_image);
-    relu(conv1_output);
+    for (auto& channel : conv1_output) {
+        relu(channel);
+    }
     auto conv2_output = conv2.forward(conv1_output);
-    relu(conv2_output);
+    for (auto& channel : conv2_output) {
+        relu(channel);
+    }
 
-    vector<float> flattened_output;
+    vector<vector<float> > flattened_output(1);
     for (const auto& channel : conv2_output) {
         for (const auto& row : channel) {
             for (float val : row) {
-                flattened_output.push_back(val);
+                flattened_output[0].push_back(val);
             }
         }
     }
 
-    auto fc1_output = fc1.forward(flattened_output);
+    vector<vector<float>> fc1_output = fc1.forward(flattened_output);
     relu(fc1_output);
-    auto fc2_output = fc2.forward(fc1_output);
+    vector<vector<float>> fc2_output = fc2.forward(fc1_output);
     softmax(fc2_output);
 
-
     cout << "Output of the network: ";
-    for (float val : fc2_output) {
+    for (float val : fc2_output[0]) {
         cout << val << " ";
     }
     cout << endl;

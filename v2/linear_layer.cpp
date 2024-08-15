@@ -2,6 +2,7 @@
 #include <random>
 #include <iostream>
 #include <cmath>
+#include <stdexcept>
 
 using namespace std;
 
@@ -9,20 +10,20 @@ class LinearLayer {
 private:
     int input_features;
     int output_features;
-    vector<vector<float>> weights;
+    vector<vector<float> > weights;
     vector<float> bias;
     vector<float> inputs;
     vector<float> outputs;
 
     // Adam optimizer parameters
-    vector<vector<float>> m_weights;
-    vector<vector<float>> v_weights;
+    vector<vector<float> > m_weights;
+    vector<vector<float> > v_weights;
     vector<float> m_bias;
     vector<float> v_bias;
-    float beta1 = 0.9;
-    float beta2 = 0.999;
-    float epsilon = 1e-8;
-    int t = 0;
+    float beta1;
+    float beta2;
+    float epsilon;
+    int t;
 
     void initialize_weights() {
         float k = 1.0 / sqrt(input_features);
@@ -49,29 +50,31 @@ private:
 
 public:
     LinearLayer(int in_features, int out_features)
-        : input_features(in_features), output_features(out_features) {
+        : input_features(in_features), output_features(out_features), beta1(0.9), beta2(0.999), epsilon(1e-8), t(0) {
         initialize_weights();
     }
 
-    vector<float> forward(const vector<float>& input) {
-        if (input.size() != input_features) {
+    vector<vector<float>> forward(const vector<vector<float>>& input) {
+        int batch_size = input.size();
+        if (input[0].size() != input_features) {
             throw invalid_argument("Input size does not match input features.");
         }
 
-        inputs = input;
-        outputs.resize(output_features);
+        vector<vector<float>> outputs(batch_size, vector<float>(output_features));
 
-        for (int i = 0; i < output_features; ++i) {
-            outputs[i] = bias[i];
-            for (int j = 0; j < input_features; ++j) {
-                outputs[i] += weights[i][j] * input[j];
+        for (int b = 0; b < batch_size; ++b) {
+            for (int i = 0; i < output_features; ++i) {
+                outputs[b][i] = bias[i];
+                for (int j = 0; j < input_features; ++j) {
+                    outputs[b][i] += weights[i][j] * input[b][j];
+                }
             }
         }
 
         return outputs;
     }
 
-    void update_weights(const vector<vector<float>>& d_weights, const vector<float>& d_bias, float learning_rate) {
+    void update_weights(const vector<vector<float> >& d_weights, const vector<float>& d_bias, float learning_rate) {
         t++;
         for (int i = 0; i < output_features; ++i) {
             for (int j = 0; j < input_features; ++j) {
@@ -94,7 +97,7 @@ public:
     }
 
     void print_weights() const {
-        for (const auto& row : weights) {
+        for (const vector<float>& row : weights) {
             for (float val : row) {
                 cout << val << " ";
             }

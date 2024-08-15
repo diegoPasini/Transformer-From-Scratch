@@ -1,8 +1,8 @@
 #include "mnist_reader.h"
 #include "convolution.cpp"
-#include "functions.cpp"
+#include "functions.h"
 #include "linear_layer.cpp"
-#include "matrix_operations.cpp"
+#include "matrix_operations.h"
 #include <iostream>
 
 using namespace std;
@@ -48,9 +48,9 @@ int main() {
         }
     }
 
-    vector<vector<float>> fc1_output = fc1.forward(flattened_output);
+    vector<vector<float> > fc1_output = fc1.forward(flattened_output);
     relu(fc1_output);
-    vector<vector<float>> fc2_output = fc2.forward(fc1_output);
+    vector<vector<float> > fc2_output = fc2.forward(fc1_output);
     softmax(fc2_output);
 
     cout << "Output of the network: ";

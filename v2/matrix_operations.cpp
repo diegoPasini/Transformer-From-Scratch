@@ -1,3 +1,4 @@
+#include "matrix_operations.h"
 #include <iostream>
 #include <vector>
 #include <cmath>

@@ -51,26 +51,31 @@ pair<float, vector<float>> softmaxLoss(const vector<float>& a, const vector<floa
     if (n != y.size()) {
         throw invalid_argument("Dimensions of input and output do not match.");
     }
+    
     float loss = 0.0f;
     vector<float> gradient(n);
+    vector<float> softmax_output(n);
 
+    float max_a = *max_element(a.begin(), a.end());
+    
     // Compute softmax
     float sum = 0.0f;
-    vector<float> softmax_output(n);
     for (int i = 0; i < n; i++) {
-        softmax_output[i] = exp(a[i]);
+        softmax_output[i] = exp(a[i] - max_a);  
         sum += softmax_output[i];
     }
     for (int i = 0; i < n; i++) {
         softmax_output[i] /= sum;
     }
 
-    // Compute loss
+    // Compute cross-entropy loss
     for (int i = 0; i < n; i++) {
-        loss -= y[i] * log(softmax_output[i]);
+        if (y[i] > 0) {  // Avoid computing log(0)
+            loss -= y[i] * log(softmax_output[i] + 1e-9);  
+        }
     }
 
-    // Compute gradient
+    // Compute gradient (softmax_output - y)
     for (int i = 0; i < n; i++) {
         gradient[i] = softmax_output[i] - y[i];
     }

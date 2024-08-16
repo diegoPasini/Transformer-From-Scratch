@@ -5,8 +5,10 @@
 #include "matrix_operations.h"
 #include <iostream>
 #include <random>
+#include <chrono>
 
 using namespace std;
+using namespace std::chrono;
 
 vector<vector<float>> get_batch(const vector<vector<float>>& images, int batch_size, int batch_index) {
     vector<vector<float>> batch(batch_size, vector<float>(images[0].size()));
@@ -46,10 +48,10 @@ int main() {
     LinearLayer fc1(16 * 28 * 28, 128); // Fully connected layer, input size 16*28*28, output size 128
     LinearLayer fc2(128, 10); // Fully connected layer, input size 128, output size 10
 
-    int batch_size = 256;
+    int batch_size = 100;
     int num_epochs = 10;
     float learning_rate = 0.001;
-
+    int microbatch_size = 10; // Define microbatch size
 
     // For Adam:
     int t = 1;
@@ -57,6 +59,8 @@ int main() {
     for (int epoch = 0; epoch < num_epochs; ++epoch) {
         cout << "Starting epoch " << epoch + 1 << " of " << num_epochs << endl;
         for (int batch_index = 0; batch_index < train_images.size() / batch_size; ++batch_index) {
+            auto start = high_resolution_clock::now(); // Start timer
+
             cout << "Processing Training Batch " << batch_index + 1 << " of " << train_images.size() / batch_size << endl;
             
             vector<vector<float>> batch_images = get_batch(train_images, batch_size, batch_index);
@@ -111,30 +115,25 @@ int main() {
             for (int i = 0; i < batch_size; ++i) {
                 vector<float> label_one_hot(10, 0.0f);
                 label_one_hot[batch_labels[i]] = 1.0f;
-                auto [loss, gradient] = softmaxLoss(fc2_output[i], label_one_hot);
+                pair<float, vector<float>> loss_and_gradient = softmaxLoss(fc2_output[i], label_one_hot);
+                float loss = loss_and_gradient.first;
+                vector<float> gradient = loss_and_gradient.second;
                 d_fc2_output[i] = gradient;
                 total_loss += loss;
+
+                // Print the gradients
+                cout << "Gradients for sample " << i + 1 << ": ";
+                for (const float& grad : gradient) {
+                    cout << grad << " ";
+                }
+                cout << endl;
             }
             float average_loss = total_loss / batch_size;
             cout << "Average Loss for batch: " << average_loss << endl;
 
-            vector<vector<float>> d_weights_fc2;
-            vector<float> d_bias_fc2;
-            broadcastMultiply(d_fc2_output[0], fc1_output[0], d_weights_fc2);
-            d_bias_fc2 = d_fc2_output[0];
-
-            // fc2.update_weights(d_weights_fc2, d_bias_fc2, learning_rate);
-
             for (int i = 0; i < batch_size; ++i) {
                 d_fc1_output[i] = fc2.backward(d_fc2_output[i], learning_rate, t);
             }
-
-            vector<vector<float>> d_weights_fc1;
-            vector<float> d_bias_fc1;
-            broadcastMultiply(d_fc1_output[0], flattened_output[0], d_weights_fc1);
-            d_bias_fc1 = d_fc1_output[0];
-
-            // fc1.update_weights(d_weights_fc1, d_bias_fc1, learning_rate);
 
             for (int i = 0; i < batch_size; ++i) {
                 d_flattened_output[i] = fc1.backward(d_fc1_output[i], learning_rate, t);
@@ -168,6 +167,10 @@ int main() {
             }
 
             ++t;
+
+            auto end = high_resolution_clock::now(); // End timer
+            auto duration = duration_cast<milliseconds>(end - start);
+            cout << "Training step took " << duration.count() << " milliseconds." << endl;
         }
         cout << "Epoch " << epoch + 1 << " completed." << endl;
     }

@@ -20,10 +20,10 @@
       ],
       "compilerPath": "/usr/bin/clang++",
       "cStandard": "${default}",
-      "cppStandard": "${default}",
+      "cppStandard": "c++17",
       "intelliSenseMode": "linux-clang-x64",
       "compilerArgs": [
-        ""
+        "-std=c++17"
       ]
     }
   ],

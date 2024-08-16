@@ -40,12 +40,10 @@ int main() {
 
     cout << "Number of training images: " << train_images.size() << endl;
     cout << "Number of training labels: " << train_labels.size() << endl;
-    cout << "Number of training images: " << test_images.size() << endl;
-    cout << "Number of training labels: " << test_labels.size() << endl;
+    cout << "Number of test images: " << test_images.size() << endl;
+    cout << "Number of test labels: " << test_labels.size() << endl;
 
-    Convolution conv1(1, 8, 3, 1, 1); // 1 input channel, 8 output channels, 3x3 kernel, stride 1, padding 1
-    Convolution conv2(8, 16, 3, 1, 1); // 8 input channels, 16 output channels, 3x3 kernel, stride 1, padding 1
-    LinearLayer fc1(16 * 28 * 28, 128); // Fully connected layer, input size 16*28*28, output size 128
+    LinearLayer fc1(28 * 28, 128); // Fully connected layer, input size 28*28, output size 128
     LinearLayer fc2(128, 10); // Fully connected layer, input size 128, output size 10
 
     int batch_size = 100;
@@ -66,41 +64,58 @@ int main() {
             vector<vector<float>> batch_images = get_batch(train_images, batch_size, batch_index);
             vector<uint8_t> batch_labels = get_batch_labels(train_labels, batch_size, batch_index);
 
-            vector<vector<vector<vector<float>>>> conv1_output(batch_size);
-            for (int i = 0; i < batch_size; ++i) {
-                vector<vector<vector<float>>> input_image(1, vector<vector<float>>(28, vector<float>(28)));
-                for (int j = 0; j < 28; ++j) {
-                    for (int k = 0; k < 28; ++k) {
-                        input_image[0][j][k] = batch_images[i][j * 28 + k];
-                    }
+            // Print the batch images
+            cout << "Batch Images:" << endl;
+            for (const auto& image : batch_images) {
+                for (float pixel : image) {
+                    cout << pixel << " ";
                 }
-                conv1_output[i] = conv1.forward(input_image);
-                for (auto& channel : conv1_output[i]) {
-                    relu(channel);
-                }
+                cout << endl;
             }
 
-            vector<vector<vector<vector<float>>>> conv2_output(batch_size);
-            for (int i = 0; i < batch_size; ++i) {
-                conv2_output[i] = conv2.forward(conv1_output[i]);
-                for (auto& channel : conv2_output[i]) {
-                    relu(channel);
-                }
+            // Print the batch labels
+            cout << "Batch Labels:" << endl;
+            for (uint8_t label : batch_labels) {
+                cout << static_cast<int>(label) << " ";
             }
+            cout << endl;
 
-            vector<vector<float>> flattened_output(batch_size, vector<float>(16 * 28 * 28));
-            for (int i = 0; i < batch_size; ++i) {
-                int index = 0;
-                for (const auto& channel : conv2_output[i]) {
-                    for (const auto& row : channel) {
-                        for (float val : row) {
-                            flattened_output[i][index++] = val;
-                        }
-                    }
-                }
-            }
+            // vector<vector<vector<vector<float>>>> conv1_output(batch_size);
+            // for (int i = 0; i < batch_size; ++i) {
+            //     vector<vector<vector<float>>> input_image(1, vector<vector<float>>(28, vector<float>(28)));
+            //     for (int j = 0; j < 28; ++j) {
+            //         for (int k = 0; k < 28; ++k) {
+            //             input_image[0][j][k] = batch_images[i][j * 28 + k];
+            //         }
+            //     }
+            //     conv1_output[i] = conv1.forward(input_image);
+            //     for (auto& channel : conv1_output[i]) {
+            //         relu(channel);
+            //     }
+            // }
 
-            vector<vector<float>> fc1_output = fc1.forward(flattened_output);
+            // vector<vector<vector<vector<float>>>> conv2_output(batch_size);
+            // for (int i = 0; i < batch_size; ++i) {
+            //     conv2_output[i] = conv2.forward(conv1_output[i]);
+            //     for (auto& channel : conv2_output[i]) {
+            //         relu(channel);
+            //     }
+            // }
+
+            // vector<vector<float>> flattened_output(batch_size, vector<float>(16 * 28 * 28));
+            // for (int i = 0; i < batch_size; ++i) {
+            //     int index = 0;
+            //     for (const auto& channel : conv2_output[i]) {
+            //         for (const auto& row : channel) {
+            //             for (float val : row) {
+            //                 flattened_output[i][index++] = val;
+            //             }
+            //         }
+            //     }
+            // }
+
+            vector<vector<float>> fc1_input = batch_images;
+            vector<vector<float>> fc1_output = fc1.forward(fc1_input);
             relu(fc1_output);
             vector<vector<float>> fc2_output = fc2.forward(fc1_output);
             softmax(fc2_output);
@@ -139,32 +154,32 @@ int main() {
                 d_flattened_output[i] = fc1.backward(d_fc1_output[i], learning_rate, t);
             }
 
-            // Backpropagation for conv2
-            vector<vector<vector<vector<float>>>> d_conv2_output(batch_size);
-            for (int i = 0; i < batch_size; ++i) {
-                d_conv2_output[i] = vector<vector<vector<float>>>(16, vector<vector<float>>(28, vector<float>(28, 0.0f)));
-                int index = 0;
-                for (int c = 0; c < 16; ++c) {
-                    for (int h = 0; h < 28; ++h) {
-                        for (int w = 0; w < 28; ++w) {
-                            d_conv2_output[i][c][h][w] = d_flattened_output[i][index++];
-                        }
-                    }
-                }
-                for (auto& channel : d_conv2_output[i]) {
-                    relu_backward(channel, conv2_output[i][&channel - &d_conv2_output[i][0]]);
-                }
-                d_conv2_output[i] = conv2.backward(d_conv2_output[i], conv1_output[i]);
-            }
+            // // Backpropagation for conv2
+            // vector<vector<vector<vector<float>>>> d_conv2_output(batch_size);
+            // for (int i = 0; i < batch_size; ++i) {
+            //     d_conv2_output[i] = vector<vector<vector<float>>>(16, vector<vector<float>>(28, vector<float>(28, 0.0f)));
+            //     int index = 0;
+            //     for (int c = 0; c < 16; ++c) {
+            //         for (int h = 0; h < 28; ++h) {
+            //             for (int w = 0; w < 28; ++w) {
+            //                 d_conv2_output[i][c][h][w] = d_flattened_output[i][index++];
+            //             }
+            //         }
+            //     }
+            //     for (auto& channel : d_conv2_output[i]) {
+            //         relu_backward(channel, conv2_output[i][&channel - &d_conv2_output[i][0]]);
+            //     }
+            //     d_conv2_output[i] = conv2.backward(d_conv2_output[i], conv1_output[i]);
+            // }
 
-            // Backpropagation for conv1
-            vector<vector<vector<vector<float>>>> d_conv1_output(batch_size);
-            for (int i = 0; i < batch_size; ++i) {
-                for (auto& channel : d_conv2_output[i]) {
-                    relu_backward(channel, conv1_output[i][&channel - &d_conv2_output[i][0]]);
-                }
-                d_conv1_output[i] = conv1.backward(d_conv2_output[i], vector<vector<vector<float>>>(1, vector<vector<float>>(28, vector<float>(28))));
-            }
+            // // Backpropagation for conv1
+            // vector<vector<vector<vector<float>>>> d_conv1_output(batch_size);
+            // for (int i = 0; i < batch_size; ++i) {
+            //     for (auto& channel : d_conv2_output[i]) {
+            //         relu_backward(channel, conv1_output[i][&channel - &d_conv2_output[i][0]]);
+            //     }
+            //     d_conv1_output[i] = conv1.backward(d_conv2_output[i], vector<vector<vector<float>>>(1, vector<vector<float>>(28, vector<float>(28))));
+            // }
 
             ++t;
 
@@ -184,41 +199,43 @@ int main() {
         vector<vector<float>> batch_images = get_batch(test_images, batch_size, batch_index);
         vector<uint8_t> batch_labels = get_batch_labels(test_labels, batch_size, batch_index);
 
-        vector<vector<vector<vector<float>>>> conv1_output(batch_size);
-        for (int i = 0; i < batch_size; ++i) {
-            vector<vector<vector<float>>> input_image(1, vector<vector<float>>(28, vector<float>(28)));
-            for (int j = 0; j < 28; ++j) {
-                for (int k = 0; k < 28; ++k) {
-                    input_image[0][j][k] = batch_images[i][j * 28 + k];
-                }
-            }
-            conv1_output[i] = conv1.forward(input_image);
-            for (auto& channel : conv1_output[i]) {
-                relu(channel);
-            }
-        }
+        // vector<vector<vector<vector<float>>>> conv1_output(batch_size);
+        // for (int i = 0; i < batch_size; ++i) {
+        //     vector<vector<vector<float>>> input_image(1, vector<vector<float>>(28, vector<float>(28)));
+        //     for (int j = 0; j < 28; ++j) {
+        //         for (int k = 0; k < 28; ++k) {
+        //             input_image[0][j][k] = batch_images[i][j * 28 + k];
+        //         }
+        //     }
+        //     conv1_output[i] = conv1.forward(input_image);
+        //     for (auto& channel : conv1_output[i]) {
+        //         relu(channel);
+        //     }
+        // }
 
-        vector<vector<vector<vector<float>>>> conv2_output(batch_size);
-        for (int i = 0; i < batch_size; ++i) {
-            conv2_output[i] = conv2.forward(conv1_output[i]);
-            for (auto& channel : conv2_output[i]) {
-                relu(channel);
-            }
-        }
+        // vector<vector<vector<vector<float>>>> conv2_output(batch_size);
+        // for (int i = 0; i < batch_size; ++i) {
+        //     conv2_output[i] = conv2.forward(conv1_output[i]);
+        //     for (auto& channel : conv2_output[i]) {
+        //         relu(channel);
+        //     }
+        // }
 
-        vector<vector<float>> flattened_output(batch_size, vector<float>(16 * 28 * 28));
-        for (int i = 0; i < batch_size; ++i) {
-            int index = 0;
-            for (const auto& channel : conv2_output[i]) {
-                for (const auto& row : channel) {
-                    for (float val : row) {
-                        flattened_output[i][index++] = val;
-                    }
-                }
-            }
-        }
+        // vector<vector<float>> flattened_output(batch_size, vector<float>(16 * 28 * 28));
+        // for (int i = 0; i < batch_size; ++i) {
+        //     int index = 0;
+        //     for (const auto& channel : conv2_output[i]) {
+        //         for (const auto& row : channel) {
+        //             for (float val : row) {
+        //                 flattened_output[i][index++] = val;
+        //             }
+        //         }
+        //     }
+        // }
 
-        vector<vector<float>> fc1_output = fc1.forward(flattened_output);
+        vector<vector<float>> fc1_input = batch_images;
+        vector<vector<float>> fc1_output = fc1.forward(fc1_input);
+        // vector<vector<float>> fc1_output = fc1.forward(flattened_output);
         relu(fc1_output);
         vector<vector<float>> fc2_output = fc2.forward(fc1_output);
         softmax(fc2_output);

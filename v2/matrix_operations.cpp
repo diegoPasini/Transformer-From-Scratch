@@ -23,7 +23,6 @@ void addMatrices(const vector<vector<float> >& a, const vector<vector<float> >& 
 
 // Matrix Multiplication
 // Not CUDA
-// Not CUDA
 void multiplyMatrices(const vector<vector<float> >& a, const vector<vector<float> >& b, vector<vector<float> >& c) {
     int m = a.size();
     if (m == 0) throw invalid_argument("Matrix 'a' is empty");

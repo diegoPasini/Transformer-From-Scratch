@@ -5,22 +5,18 @@
 using namespace std;
 
 // RELU
-void relu(vector<vector<float>>& a) {
-    int m = a.size();
-    int n = a[0].size();
-    for (int i = 0; i < m; i++) {
-        for (int j = 0; j < n; j++) {
-            a[i][j] = max(0.0f, a[i][j]);
+void relu(vector<vector<float>>& batch) {
+    for (auto& a : batch) {
+        for (auto& val : a) {
+            val = max(0.0f, val);
         }
     }
 }
 
 // RELU Backward
 void relu_backward(vector<vector<float>>& d_output, const vector<vector<float>>& input) {
-    int m = d_output.size();
-    int n = d_output[0].size();
-    for (int i = 0; i < m; i++) {
-        for (int j = 0; j < n; j++) {
+    for (size_t i = 0; i < d_output.size(); ++i) {
+        for (size_t j = 0; j < d_output[i].size(); ++j) {
             if (input[i][j] <= 0) {
                 d_output[i][j] = 0;
             }
@@ -29,17 +25,15 @@ void relu_backward(vector<vector<float>>& d_output, const vector<vector<float>>&
 }
 
 // Softmax
-void softmax(vector<vector<float>>& a) {
-    int m = a.size();
-    int n = a[0].size();
-    for (int i = 0; i < m; i++) {
+void softmax(vector<vector<float>>& batch) {
+    for (auto& a : batch) {
         float row_sum = 0.0f;
-        for (int j = 0; j < n; j++) {
-            a[i][j] = exp(a[i][j]);
-            row_sum += a[i][j];
+        for (auto& val : a) {
+            val = exp(val);
+            row_sum += val;
         }
-        for (int j = 0; j < n; j++) {
-            a[i][j] /= row_sum;
+        for (auto& val : a) {
+            val /= row_sum;
         }
     }
 }

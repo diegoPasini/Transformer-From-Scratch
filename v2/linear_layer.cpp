@@ -71,25 +71,22 @@ public:
         return batch_outputs;
     }
 
-    // Backward pass for the entire batch
     vector<vector<float>> backward(const vector<vector<float>>& d_outputs, float learning_rate, int t) {
         int batch_size = d_outputs.size();
         vector<vector<float>> d_weights(output_features, vector<float>(input_features, 0.0f));
         vector<vector<float>> d_inputs(batch_size, vector<float>(input_features, 0.0f));
         vector<float> d_bias(output_features, 0.0f);
 
-        // Compute weight and input gradients for the entire batch
         for (int b = 0; b < batch_size; ++b) {
             for (int i = 0; i < output_features; ++i) {
                 for (int j = 0; j < input_features; ++j) {
-                    d_weights[i][j] += d_outputs[b][i] * inputs[b][j];  // Accumulate gradient for weights
-                    d_inputs[b][j] += d_outputs[b][i] * weights[i][j];  // Gradient for inputs
+                    d_weights[i][j] += d_outputs[b][i] * inputs[b][j];  
+                    d_inputs[b][j] += d_outputs[b][i] * weights[i][j];  
                 }
-                d_bias[i] += d_outputs[b][i];  // Accumulate gradient for bias
+                d_bias[i] += d_outputs[b][i];  
             }
         }
 
-        // Normalize gradients by batch size
         for (int i = 0; i < output_features; ++i) {
             for (int j = 0; j < input_features; ++j) {
                 d_weights[i][j] /= batch_size;
@@ -97,7 +94,6 @@ public:
             d_bias[i] /= batch_size;
         }
 
-        // Adam optimizer updates
         float beta1_t = 1 - pow(beta1, t);
         float beta2_t = 1 - pow(beta2, t);
 
@@ -106,11 +102,13 @@ public:
                 m_weights[i][j] = beta1 * m_weights[i][j] + (1 - beta1) * d_weights[i][j];
                 v_weights[i][j] = beta2 * v_weights[i][j] + (1 - beta2) * d_weights[i][j] * d_weights[i][j];
 
+                
                 float m_hat = m_weights[i][j] / (1 - pow(beta1, t));
                 float v_hat = v_weights[i][j] / (1 - pow(beta2, t));
 
                 weights[i][j] -= learning_rate * m_hat / (sqrt(v_hat) + epsilon);
             }
+
             m_bias[i] = beta1 * m_bias[i] + (1 - beta1) * d_bias[i];
             v_bias[i] = beta2 * v_bias[i] + (1 - beta2) * d_bias[i] * d_bias[i];
 
@@ -120,7 +118,7 @@ public:
             bias[i] -= learning_rate * m_hat_bias / (sqrt(v_hat_bias) + epsilon);
         }
 
-        return d_inputs;  // Return gradients with respect to inputs
+        return d_inputs; 
     }
 
     void print_weights() const {

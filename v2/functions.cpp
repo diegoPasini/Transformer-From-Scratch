@@ -25,15 +25,16 @@ void relu_backward(vector<vector<float>>& d_output, const vector<vector<float>>&
 }
 
 // Softmax
-void softmax(vector<vector<float>>& batch) {
-    for (auto& a : batch) {
-        float row_sum = 0.0f;
-        for (auto& val : a) {
-            val = exp(val);
-            row_sum += val;
+void softmax(vector<vector<float>>& logits) {
+    for (auto& logit : logits) {
+        float max_val = *max_element(logit.begin(), logit.end());
+        float sum_exp = 0.0f;
+        for (auto& val : logit) {
+            val = exp(val - max_val); 
+            sum_exp += val;
         }
-        for (auto& val : a) {
-            val /= row_sum;
+        for (auto& val : logit) {
+            val /= sum_exp;
         }
     }
 }
@@ -46,6 +47,7 @@ pair<float, vector<float>> softmaxLoss(const vector<float>& a, const vector<floa
         throw invalid_argument("Dimensions of input and output do not match.");
     }
     
+    float epsilon = 1e-9;  // Small value to prevent log(0)
     float loss = 0.0f;
     vector<float> gradient(n);
     vector<float> softmax_output(n);
@@ -65,7 +67,7 @@ pair<float, vector<float>> softmaxLoss(const vector<float>& a, const vector<floa
     // Compute cross-entropy loss
     for (int i = 0; i < n; i++) {
         if (y[i] > 0) {  // Avoid computing log(0)
-            loss -= y[i] * log(softmax_output[i] + 1e-9);  
+            loss -= y[i] * log(softmax_output[i] + epsilon);
         }
     }
 

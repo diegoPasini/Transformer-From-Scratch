@@ -14,8 +14,8 @@ private:
     int output_features;
     vector<vector<float>> weights;
     vector<float> bias;
-    vector<float> inputs;
-    vector<float> outputs;
+    vector<vector<float>> inputs; 
+    vector<vector<float>> outputs;
 
     // Adam optimizer parameters
     vector<vector<float>> m_weights;
@@ -55,34 +55,44 @@ public:
         initialize_weights();
     }
 
-    vector<vector<float>> forward(const vector<vector<float>>& input) {
-        int batch_size = input.size();
-        if (input[0].size() != input_features) {
-            throw invalid_argument("Input size does not match input features.");
-        }
-
-        vector<vector<float>> outputs(batch_size, vector<float>(output_features));
+    vector<vector<float>> forward(const vector<vector<float>>& batch_inputs) {
+        int batch_size = batch_inputs.size();
+        inputs = batch_inputs;  // Save the entire batch of inputs
+        vector<vector<float>> batch_outputs(batch_size, vector<float>(output_features));
 
         for (int b = 0; b < batch_size; ++b) {
             for (int i = 0; i < output_features; ++i) {
-                outputs[b][i] = bias[i];
+                batch_outputs[b][i] = bias[i];
                 for (int j = 0; j < input_features; ++j) {
-                    outputs[b][i] += weights[i][j] * input[b][j];
+                    batch_outputs[b][i] += weights[i][j] * batch_inputs[b][j];
                 }
             }
         }
-
-        return outputs;
+        return batch_outputs;
     }
 
-    vector<float> backward(const vector<float>& d_outputs, float learning_rate, int t) {
-        vector<vector<float>> d_weights(output_features, vector<float>(input_features, 1.0f));
-        vector<vector<float>> d_inputs(1, vector<float>(input_features));
-        vector<vector<float>> d_outputs_2D = {d_outputs};
+    vector<vector<float>> backward(const vector<vector<float>>& d_outputs, float learning_rate, int t) {
+        int batch_size = d_outputs.size();
+        vector<vector<float>> d_weights(output_features, vector<float>(input_features, 0.0f));
+        vector<vector<float>> d_inputs(batch_size, vector<float>(input_features, 0.0f));
+        vector<float> d_bias(output_features, 0.0f);
 
-        broadcastMultiply(d_outputs, inputs, d_weights);
-        multiplyMatrices(d_outputs_2D, weights, d_inputs);
-        vector<float> d_bias = d_outputs;
+        for (int b = 0; b < batch_size; ++b) {
+            for (int i = 0; i < output_features; ++i) {
+                for (int j = 0; j < input_features; ++j) {
+                    d_weights[i][j] += d_outputs[b][i] * inputs[b][j];  
+                    d_inputs[b][j] += d_outputs[b][i] * weights[i][j];  
+                }
+                d_bias[i] += d_outputs[b][i];  
+            }
+        }
+
+        for (int i = 0; i < output_features; ++i) {
+            for (int j = 0; j < input_features; ++j) {
+                d_weights[i][j] /= batch_size;
+            }
+            d_bias[i] /= batch_size;
+        }
 
         float beta1_t = 1 - pow(beta1, t);
         float beta2_t = 1 - pow(beta2, t);
@@ -92,13 +102,13 @@ public:
                 m_weights[i][j] = beta1 * m_weights[i][j] + (1 - beta1) * d_weights[i][j];
                 v_weights[i][j] = beta2 * v_weights[i][j] + (1 - beta2) * d_weights[i][j] * d_weights[i][j];
 
+                
                 float m_hat = m_weights[i][j] / (1 - pow(beta1, t));
                 float v_hat = v_weights[i][j] / (1 - pow(beta2, t));
 
                 weights[i][j] -= learning_rate * m_hat / (sqrt(v_hat) + epsilon);
-
-                // Print the updated weight
             }
+
             m_bias[i] = beta1 * m_bias[i] + (1 - beta1) * d_bias[i];
             v_bias[i] = beta2 * v_bias[i] + (1 - beta2) * d_bias[i] * d_bias[i];
 
@@ -106,11 +116,9 @@ public:
             float v_hat_bias = v_bias[i] / (1 - pow(beta2, t));
 
             bias[i] -= learning_rate * m_hat_bias / (sqrt(v_hat_bias) + epsilon);
-
-            // Print the updated bias
         }
 
-        return d_inputs[0];
+        return d_inputs; 
     }
 
     void print_weights() const {

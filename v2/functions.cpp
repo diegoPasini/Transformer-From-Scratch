@@ -5,22 +5,18 @@
 using namespace std;
 
 // RELU
-void relu(vector<vector<float>>& a) {
-    int m = a.size();
-    int n = a[0].size();
-    for (int i = 0; i < m; i++) {
-        for (int j = 0; j < n; j++) {
-            a[i][j] = max(0.0f, a[i][j]);
+void relu(vector<vector<float>>& batch) {
+    for (auto& a : batch) {
+        for (auto& val : a) {
+            val = max(0.0f, val);
         }
     }
 }
 
 // RELU Backward
 void relu_backward(vector<vector<float>>& d_output, const vector<vector<float>>& input) {
-    int m = d_output.size();
-    int n = d_output[0].size();
-    for (int i = 0; i < m; i++) {
-        for (int j = 0; j < n; j++) {
+    for (size_t i = 0; i < d_output.size(); ++i) {
+        for (size_t j = 0; j < d_output[i].size(); ++j) {
             if (input[i][j] <= 0) {
                 d_output[i][j] = 0;
             }
@@ -29,17 +25,16 @@ void relu_backward(vector<vector<float>>& d_output, const vector<vector<float>>&
 }
 
 // Softmax
-void softmax(vector<vector<float>>& a) {
-    int m = a.size();
-    int n = a[0].size();
-    for (int i = 0; i < m; i++) {
-        float row_sum = 0.0f;
-        for (int j = 0; j < n; j++) {
-            a[i][j] = exp(a[i][j]);
-            row_sum += a[i][j];
+void softmax(vector<vector<float>>& logits) {
+    for (auto& logit : logits) {
+        float max_val = *max_element(logit.begin(), logit.end());
+        float sum_exp = 0.0f;
+        for (auto& val : logit) {
+            val = exp(val - max_val); 
+            sum_exp += val;
         }
-        for (int j = 0; j < n; j++) {
-            a[i][j] /= row_sum;
+        for (auto& val : logit) {
+            val /= sum_exp;
         }
     }
 }
@@ -52,6 +47,7 @@ pair<float, vector<float>> softmaxLoss(const vector<float>& a, const vector<floa
         throw invalid_argument("Dimensions of input and output do not match.");
     }
     
+    float epsilon = 1e-9;  // Small value to prevent log(0)
     float loss = 0.0f;
     vector<float> gradient(n);
     vector<float> softmax_output(n);
@@ -71,7 +67,7 @@ pair<float, vector<float>> softmaxLoss(const vector<float>& a, const vector<floa
     // Compute cross-entropy loss
     for (int i = 0; i < n; i++) {
         if (y[i] > 0) {  // Avoid computing log(0)
-            loss -= y[i] * log(softmax_output[i] + 1e-9);  
+            loss -= y[i] * log(softmax_output[i] + epsilon);
         }
     }
 

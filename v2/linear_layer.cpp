@@ -12,14 +12,14 @@ class LinearLayer {
 private:
     int input_features;
     int output_features;
-    vector<vector<float> > weights;
+    vector<vector<float>> weights;
     vector<float> bias;
     vector<float> inputs;
     vector<float> outputs;
 
     // Adam optimizer parameters
-    vector<vector<float> > m_weights;
-    vector<vector<float> > v_weights;
+    vector<vector<float>> m_weights;
+    vector<vector<float>> v_weights;
     vector<float> m_bias;
     vector<float> v_bias;
     float beta1;
@@ -55,13 +55,13 @@ public:
         initialize_weights();
     }
 
-    vector<vector<float> > forward(const vector<vector<float> >& input) {
+    vector<vector<float>> forward(const vector<vector<float>>& input) {
         int batch_size = input.size();
         if (input[0].size() != input_features) {
             throw invalid_argument("Input size does not match input features.");
         }
 
-        vector<vector<float> > outputs(batch_size, vector<float>(output_features));
+        vector<vector<float>> outputs(batch_size, vector<float>(output_features));
 
         for (int b = 0; b < batch_size; ++b) {
             for (int i = 0; i < output_features; ++i) {
@@ -76,29 +76,28 @@ public:
     }
 
     vector<float> backward(const vector<float>& d_outputs, float learning_rate, int t) {
-
         vector<vector<float>> d_weights(output_features, vector<float>(input_features, 1.0f));
-        vector<vector<float>> d_inputs(1, vector<float>(input_features)); // this should just be a row vector, but we're matrix multiplying to get it. In the return statement we only return the first row.
+        vector<vector<float>> d_inputs(1, vector<float>(input_features));
         vector<vector<float>> d_outputs_2D = {d_outputs};
-        // cout << "Got to Broadcast Multiply " << endl;
+
         broadcastMultiply(d_outputs, inputs, d_weights);
         multiplyMatrices(d_outputs_2D, weights, d_inputs);
-        // cout << "Finished Multiply Matrices " << endl;
-        vector<float> d_bias = d_outputs;        
+        vector<float> d_bias = d_outputs;
+
+        float beta1_t = 1 - pow(beta1, t);
+        float beta2_t = 1 - pow(beta2, t);
 
         for (int i = 0; i < output_features; ++i) {
             for (int j = 0; j < input_features; ++j) {
-                // cout << "m_weights[" << i << "][" << j << "] before: " << m_weights[i][j] << endl;
-                // cout << "v_weights[" << i << "][" << j << "] before: " << v_weights[i][j] << endl;
                 m_weights[i][j] = beta1 * m_weights[i][j] + (1 - beta1) * d_weights[i][j];
                 v_weights[i][j] = beta2 * v_weights[i][j] + (1 - beta2) * d_weights[i][j] * d_weights[i][j];
-                // cout << "m_weights[" << i << "][" << j << "] after: " << m_weights[i][j] << endl;
-                // cout << "v_weights[" << i << "][" << j << "] after: " << v_weights[i][j] << endl;
 
                 float m_hat = m_weights[i][j] / (1 - pow(beta1, t));
                 float v_hat = v_weights[i][j] / (1 - pow(beta2, t));
 
                 weights[i][j] -= learning_rate * m_hat / (sqrt(v_hat) + epsilon);
+
+                // Print the updated weight
             }
             m_bias[i] = beta1 * m_bias[i] + (1 - beta1) * d_bias[i];
             v_bias[i] = beta2 * v_bias[i] + (1 - beta2) * d_bias[i] * d_bias[i];
@@ -107,34 +106,12 @@ public:
             float v_hat_bias = v_bias[i] / (1 - pow(beta2, t));
 
             bias[i] -= learning_rate * m_hat_bias / (sqrt(v_hat_bias) + epsilon);
-        }
 
-        // cout << "Finished Input Features " << endl;
+            // Print the updated bias
+        }
 
         return d_inputs[0];
     }
-
-    // void update_weights(const vector<vector<float> >& d_weights, const vector<float>& d_bias, float learning_rate) {
-    //     t++;
-    //     for (int i = 0; i < output_features; ++i) {
-    //         for (int j = 0; j < input_features; ++j) {
-    //             m_weights[i][j] = beta1 * m_weights[i][j] + (1 - beta1) * d_weights[i][j];
-    //             v_weights[i][j] = beta2 * v_weights[i][j] + (1 - beta2) * d_weights[i][j] * d_weights[i][j];
-
-    //             float m_hat = m_weights[i][j] / (1 - pow(beta1, t));
-    //             float v_hat = v_weights[i][j] / (1 - pow(beta2, t));
-
-    //             weights[i][j] -= learning_rate * m_hat / (sqrt(v_hat) + epsilon);
-    //         }
-    //         m_bias[i] = beta1 * m_bias[i] + (1 - beta1) * d_bias[i];
-    //         v_bias[i] = beta2 * v_bias[i] + (1 - beta2) * d_bias[i] * d_bias[i];
-
-    //         float m_hat_bias = m_bias[i] / (1 - pow(beta1, t));
-    //         float v_hat_bias = v_bias[i] / (1 - pow(beta2, t));
-
-    //         bias[i] -= learning_rate * m_hat_bias / (sqrt(v_hat_bias) + epsilon);
-    //     }
-    // }
 
     void print_weights() const {
         for (const vector<float>& row : weights) {

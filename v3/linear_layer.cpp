@@ -12,6 +12,7 @@ class LinearLayer {
 private:
     int input_features;
     int output_features;
+    bool use_bias;
     vector<vector<float>> weights;
     vector<float> bias;
     vector<vector<float>> inputs; 
@@ -41,17 +42,19 @@ private:
             }
         }
 
-        bias.resize(output_features);
-        m_bias.resize(output_features, 0.0);
-        v_bias.resize(output_features, 0.0);
-        for (int i = 0; i < output_features; ++i) {
-            bias[i] = distr(gen);
+        if (use_bias) {
+            bias.resize(output_features);
+            m_bias.resize(output_features, 0.0);
+            v_bias.resize(output_features, 0.0);
+            for (int i = 0; i < output_features; ++i) {
+                bias[i] = distr(gen);
+            }
         }
     }
 
 public:
-    LinearLayer(int in_features, int out_features)
-        : input_features(in_features), output_features(out_features), beta1(0.9), beta2(0.999), epsilon(1e-8) {
+    LinearLayer(int in_features, int out_features, bool bias = true)
+        : input_features(in_features), output_features(out_features), use_bias(bias), beta1(0.9), beta2(0.999), epsilon(1e-8) {
         initialize_weights();
     }
 
@@ -62,7 +65,7 @@ public:
 
         for (int b = 0; b < batch_size; ++b) {
             for (int i = 0; i < output_features; ++i) {
-                batch_outputs[b][i] = bias[i];
+                batch_outputs[b][i] = use_bias ? bias[i] : 0.0f;
                 for (int j = 0; j < input_features; ++j) {
                     batch_outputs[b][i] += weights[i][j] * batch_inputs[b][j];
                 }
@@ -83,7 +86,9 @@ public:
                     d_weights[i][j] += d_outputs[b][i] * inputs[b][j];  
                     d_inputs[b][j] += d_outputs[b][i] * weights[i][j];  
                 }
-                d_bias[i] += d_outputs[b][i];  
+                if (use_bias) {
+                    d_bias[i] += d_outputs[b][i];  
+                }
             }
         }
 
@@ -91,7 +96,9 @@ public:
             for (int j = 0; j < input_features; ++j) {
                 d_weights[i][j] /= batch_size;
             }
-            d_bias[i] /= batch_size;
+            if (use_bias) {
+                d_bias[i] /= batch_size;
+            }
         }
 
         float beta1_t = 1 - pow(beta1, t);
@@ -102,20 +109,21 @@ public:
                 m_weights[i][j] = beta1 * m_weights[i][j] + (1 - beta1) * d_weights[i][j];
                 v_weights[i][j] = beta2 * v_weights[i][j] + (1 - beta2) * d_weights[i][j] * d_weights[i][j];
 
-                
                 float m_hat = m_weights[i][j] / (1 - pow(beta1, t));
                 float v_hat = v_weights[i][j] / (1 - pow(beta2, t));
 
                 weights[i][j] -= learning_rate * m_hat / (sqrt(v_hat) + epsilon);
             }
 
-            m_bias[i] = beta1 * m_bias[i] + (1 - beta1) * d_bias[i];
-            v_bias[i] = beta2 * v_bias[i] + (1 - beta2) * d_bias[i] * d_bias[i];
+            if (use_bias) {
+                m_bias[i] = beta1 * m_bias[i] + (1 - beta1) * d_bias[i];
+                v_bias[i] = beta2 * v_bias[i] + (1 - beta2) * d_bias[i] * d_bias[i];
 
-            float m_hat_bias = m_bias[i] / (1 - pow(beta1, t));
-            float v_hat_bias = v_bias[i] / (1 - pow(beta2, t));
+                float m_hat_bias = m_bias[i] / (1 - pow(beta1, t));
+                float v_hat_bias = v_bias[i] / (1 - pow(beta2, t));
 
-            bias[i] -= learning_rate * m_hat_bias / (sqrt(v_hat_bias) + epsilon);
+                bias[i] -= learning_rate * m_hat_bias / (sqrt(v_hat_bias) + epsilon);
+            }
         }
 
         return d_inputs; 
@@ -131,9 +139,13 @@ public:
     }
 
     void print_bias() const {
-        for (float val : bias) {
-            cout << val << " ";
+        if (use_bias) {
+            for (float val : bias) {
+                cout << val << " ";
+            }
+            cout << endl;
+        } else {
+            cout << "Bias is not used in this layer." << endl;
         }
-        cout << endl;
     }
 };

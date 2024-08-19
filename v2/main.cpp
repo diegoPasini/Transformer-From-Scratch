@@ -6,6 +6,7 @@
 #include <iostream>
 #include <random>
 #include <chrono>
+#include <fstream>
 
 using namespace std;
 using namespace std::chrono;
@@ -37,7 +38,7 @@ void normalize_images(vector<vector<float>>& images) {
     }
 }
 
-void test_model(LinearLayer& fc1, vector<vector<float>> test_images, const vector<uint8_t>& test_labels, int batch_size) {
+void test_model(LinearLayer& fc1, vector<vector<float>> test_images, const vector<uint8_t>& test_labels, int batch_size, ofstream& log_file) {
     cout << "RUNNING TEST LOOP" << endl;
     int correct_predictions = 0;
     float total_loss = 0.0f;
@@ -63,11 +64,19 @@ void test_model(LinearLayer& fc1, vector<vector<float>> test_images, const vecto
     }
 
     float accuracy = static_cast<float>(correct_predictions) / test_images.size();
+    float average_loss = total_loss / test_images.size();
     cout << "Test Accuracy: " << accuracy << endl;
-    cout << "Test Loss: " << total_loss / test_images.size() << endl;
+    cout << "Test Loss: " << average_loss << endl;
+
+    // Log test accuracy and loss
+    log_file << "Test Accuracy: " << accuracy << endl;
+    log_file << "Test Loss: " << average_loss << endl;
 }
 
 int main() {
+    // Open log file
+    ofstream log_file("training_log.txt");
+
     // Load MNIST dataset
     string train_images_path = "../MNIST Dataset/train-images-idx3-ubyte/train-images-idx3-ubyte";
     string train_labels_path = "../MNIST Dataset/train-labels-idx1-ubyte/train-labels-idx1-ubyte";
@@ -135,6 +144,8 @@ int main() {
             if (batch_index % log_interval == 0) {
                 float average_loss = total_loss / batch_size;
                 cout << "Batch " << batch_index + 1 << " Average Loss: " << average_loss << endl;
+                // Log training loss
+                log_file << "Epoch " << epoch + 1 << ", Batch " << batch_index + 1 << " Average Loss: " << average_loss << endl;
             }
 
             fc1.backward(d_fc1_output, learning_rate, t);
@@ -146,8 +157,9 @@ int main() {
         auto epoch_duration = duration_cast<milliseconds>(epoch_end - epoch_start);
         cout << "Epoch " << epoch + 1 << " completed in " << epoch_duration.count() << " milliseconds." << endl;
 
-        test_model(fc1, test_images, test_labels, batch_size);
+        test_model(fc1, test_images, test_labels, batch_size, log_file);
     }
 
+    log_file.close();
     return 0;
 }

@@ -60,7 +60,7 @@ class ScaledDotProductAttention {
 
 
     // TODO : Finish
-     vector<vector<float>> backward(const vector<vector<float>>& dL_dout) {
+    vector<vector<float>> backward(const vector<vector<float>>& dL_dout) {
         vector<vector<float>> dL_dV, dL_dQ, dL_dK;
 
         multiplyMatricesTranspose(attention_weights, dL_dout, dL_dV);

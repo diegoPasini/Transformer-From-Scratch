@@ -28,6 +28,7 @@ private:
     float epsilon;
 
     void initialize_weights() {
+        // He initialization
         float k = sqrt(6.0f / (input_features + output_features));
         random_device rd;
         mt19937 gen(rd());

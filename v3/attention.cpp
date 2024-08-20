@@ -58,7 +58,46 @@ class ScaledDotProductAttention {
         return outputs;
     }
 
-    vector<vector<float>> backward(const vector<vector<float>>& d_outputs, float learning_rate, int t) {
-       // TODO: Implement
+
+    // TODO : Finish
+     vector<vector<float>> backward(const vector<vector<float>>& dL_dout) {
+        vector<vector<float>> dL_dV, dL_dQ, dL_dK;
+
+        multiplyMatricesTranspose(attention_weights, dL_dout, dL_dV);
+
+        // Gradient w.r.t. attention_weights
+        vector<vector<float>> dL_dattention_weights;
+        multiplyMatricesTranspose(dL_dout, values, dL_dattention_weights);
+
+        vector<vector<float>> dL_dQK = softmaxBackward(dL_dattention_weights, attention_weights);
+
+        for (int i = 0; i < dL_dQK.size(); ++i) {
+            for (int j = 0; j < dL_dQK[0].size(); ++j) {
+                if (j < i) {
+                    dL_dQK[i][j] = 0;
+                }
+            }
+        }
+
+        float d_k = static_cast<float>(keys[0].size());
+        float scale_factor = sqrt(d_k);
+        for (auto& row : dL_dQK) {
+            for (auto& elem : row) {
+                elem /= scale_factor;
+            }
+        }
+
+        // Gradient w.r.t. Q and K
+        vector<vector<float>> K_transpose;
+        tranpose(keys, K_transpose);
+        multiplyMatrices(dL_dQK, K_transpose, dL_dQ);
+
+        vector<vector<float>> Q_transpose;
+        tranpose(queries, Q_transpose);
+        multiplyMatricesTransposeA(dL_dQK, Q_transpose, dL_dK);
+
+        return {dL_dQ, dL_dK, dL_dV};
     }
+
+    
 };

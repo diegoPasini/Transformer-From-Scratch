@@ -58,16 +58,17 @@ class ScaledDotProductAttention {
         return outputs;
     }
 
-
-    // TODO : Finish
-    vector<vector<float>> backward(const vector<vector<float>>& dL_dout) {
+    tuple<vector<vector<float>>, vector<vector<float>>, vector<vector<float>>> backward(const vector<vector<float>>& dL_dout) {
         vector<vector<float>> dL_dV, dL_dQ, dL_dK;
 
-        multiplyMatricesTranspose(attention_weights, dL_dout, dL_dV);
+        vector<vector<float>> attention_weights_transpose;
+        tranpose(attention_weights, attention_weights_transpose);
+        multiplyMatrices(attention_weights_transpose, dL_dout, dL_dV);
 
-        // Gradient w.r.t. attention_weights
+        vector<vector<float>> values_transpose;
+        tranpose(values, values_transpose);
         vector<vector<float>> dL_dattention_weights;
-        multiplyMatricesTranspose(dL_dout, values, dL_dattention_weights);
+        multiplyMatrices(dL_dout, values_transpose, dL_dattention_weights);
 
         vector<vector<float>> dL_dQK = softmaxBackward(dL_dattention_weights, attention_weights);
 
@@ -87,17 +88,14 @@ class ScaledDotProductAttention {
             }
         }
 
-        // Gradient w.r.t. Q and K
         vector<vector<float>> K_transpose;
         tranpose(keys, K_transpose);
         multiplyMatrices(dL_dQK, K_transpose, dL_dQ);
 
         vector<vector<float>> Q_transpose;
         tranpose(queries, Q_transpose);
-        multiplyMatricesTransposeA(dL_dQK, Q_transpose, dL_dK);
+        multiplyMatrices(dL_dQK, Q_transpose, dL_dK);
 
-        return {dL_dQ, dL_dK, dL_dV};
+        return make_tuple(dL_dQ, dL_dK, dL_dV);
     }
-
-    
 };

@@ -91,3 +91,17 @@ pair<float, vector<float>> softmaxLoss(const vector<float>& a, const vector<floa
 
     return make_pair(loss, gradient);
 }
+
+// Softmax Backward
+vector<vector<float>> softmaxBackward(const vector<vector<float>>& dL_dout, const vector<vector<float>>& softmax_output) {
+    vector<vector<float>> dL_dinput(dL_dout.size(), vector<float>(dL_dout[0].size()));
+
+    for (size_t i = 0; i < dL_dout.size(); ++i) {
+        for (size_t j = 0; j < dL_dout[i].size(); ++j) {
+            float s = softmax_output[i][j];
+            dL_dinput[i][j] = s * (1 - s) * dL_dout[i][j];
+        }
+    }
+
+    return dL_dinput;
+}

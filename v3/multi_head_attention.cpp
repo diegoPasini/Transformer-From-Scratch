@@ -54,6 +54,40 @@ public:
     }
 
     vector<vector<float>> backward(const vector<vector<float>>& d_outputs, float learning_rate, int t) {
-        // TODO: Implement
+        vector<vector<float>> d_inputs;
+        vector<vector<float>> d_concatenated_outputs = layernorm.backward(d_outputs, learning_rate, t);
+        vector<vector<float>> d_linear_out = linear_out.backward(d_concatenated_outputs, learning_rate, t);
+
+        int batch_size = d_linear_out.size();
+        int feature_size = d_linear_out[0].size();
+        int head_feature_size = feature_size / num_heads;
+
+        vector<vector<float>> dQ(batch_size, vector<float>(dim, 0.0f));
+        vector<vector<float>> dK(batch_size, vector<float>(dim, 0.0f));
+        vector<vector<float>> dV(batch_size, vector<float>(dim, 0.0f));
+
+        for (int i = 0; i < num_heads; ++i) {
+            vector<vector<float>> d_head(d_linear_out.size(), vector<float>(head_feature_size));
+            for (int j = 0; j < d_linear_out.size(); ++j) {
+                copy(d_linear_out[j].begin() + i * head_feature_size, d_linear_out[j].begin() + (i + 1) * head_feature_size, d_head[j].begin());
+            }
+
+            ScaledDotProductAttention attention;
+            vector<vector<float>> dL_dQ, dL_dK, dL_dV;
+            tie(dL_dQ, dL_dK, dL_dV) = attention.backward(d_head);
+
+            vector<vector<float>> dQ_proj = linear_layers[i].backward(dL_dQ, learning_rate, t);
+            vector<vector<float>> dK_proj = linear_layers[i].backward(dL_dK, learning_rate, t);
+            vector<vector<float>> dV_proj = linear_layers[i].backward(dL_dV, learning_rate, t);
+
+            for (int j = 0; j < batch_size; ++j) {
+                for (int k = 0; k < dim; ++k) {
+                    dQ[j][k] += dQ_proj[j][k];
+                    dK[j][k] += dK_proj[j][k];
+                    dV[j][k] += dV_proj[j][k];
+                }
+            }
+        }
+        return dQ;
     }
 };

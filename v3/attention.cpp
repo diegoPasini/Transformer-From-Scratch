@@ -1,9 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
-#include "convolution.cpp"
 #include "functions.h"
-#include "linear_layer.cpp"
 #include "matrix_operations.h"
 
 using namespace std;

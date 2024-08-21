@@ -1,9 +1,9 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
-#include "attention.cpp"
-#include "layernorm.cpp"
-#include "linear_layer.cpp"
+#include "attention.h"
+#include "layernorm.h"
+#include "linear_layer.h"
 #include "matrix_operations.h"
 
 using namespace std;

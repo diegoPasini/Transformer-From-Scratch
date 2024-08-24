@@ -11,8 +11,8 @@ private:
     std::vector<std::vector<float>> weights;
     std::vector<float> bias;
     std::vector<std::vector<float>> inputs; 
-    std::vector<std::vector<float>> outputs;
 
+    // Adam optimizer parameters
     std::vector<std::vector<float>> m_weights;
     std::vector<std::vector<float>> v_weights;
     std::vector<float> m_bias;

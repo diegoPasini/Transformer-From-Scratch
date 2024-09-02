@@ -34,7 +34,7 @@ __global__ void flash_attention_kernel(const float* Q, const float* K, const flo
 
     for (int i = 0; i < d_k; ++i) {
         shared_output[i] = sum * shared_V[i] / sum_exp;
-    }
+    } 
     __syncthreads();
 
     if (seq_idx < d_k) {
